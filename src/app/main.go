@@ -138,9 +138,9 @@ func readFile(file, anterior string, signal bool) {
 			indexRequire := strings.Index(text, "require")
 			if indexRequire == 0 {
 				split := strings.Split(text, "\"")
-				newtext = generateSpaces(" [ require ] found: " + split[1] + " in file -> " + pathFile)
-				WARNING.Println(w(newtext))
 				if len(split) == 3 {
+					newtext = generateSpaces(" [ require ] found: " + split[1] + " in file -> " + pathFile)
+					WARNING.Println(w(newtext))
 					if strings.Contains(split[1], ".php") {
 						readFile(split[1], pathFile, false)
 					}
@@ -149,9 +149,9 @@ func readFile(file, anterior string, signal bool) {
 			indexInclude := strings.Index(text, "include")
 			if indexInclude == 0 {
 				split := strings.Split(text, "\"")
-				newtext = generateSpaces(" [ include ] found: " + split[1] + " in file -> " + pathFile)
-				WARNING.Println(w(newtext))
 				if len(split) == 3 {
+					newtext = generateSpaces(" [ include ] found: " + split[1] + " in file -> " + pathFile)
+					WARNING.Println(w(newtext))
 					if strings.Contains(split[1], ".php") {
 						readFile(split[1], pathFile, false)
 					}
