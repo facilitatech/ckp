@@ -1,0 +1,5 @@
+.idea/
+bin/
+pkg/
+src/app/dependency_logs.txt
+src/github.com
