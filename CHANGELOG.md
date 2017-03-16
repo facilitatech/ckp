@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## v0.0.3
+
+_Release: 2017-03-16_
+
+- Correção de erro index out of range
+
+
 ## v0.0.2
 
 _Release: 2017-03-16_
