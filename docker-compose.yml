@@ -5,4 +5,4 @@ services:
     container_name: app
     build: ./docker/golang
     volumes:
-     - ./:/go/
+     - ./src/app/:/go/src/app

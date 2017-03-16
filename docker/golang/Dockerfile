@@ -7,6 +7,7 @@ ENV GOBINARIES /go/bin
 # Install reflex
 WORKDIR $GOBINARIES
 RUN go get github.com/cespare/reflex
+RUN go get github.com/agtorre/gocolorize
 
 ENV PORT 6060
 # docker/app port
