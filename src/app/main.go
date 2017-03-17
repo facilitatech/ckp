@@ -13,19 +13,24 @@ import (
 	"github.com/agtorre/gocolorize"
 	"syscall"
 	"unsafe"
+	"strconv"
 )
 
 var (
-	INFO     *log.Logger
-	WARNING  *log.Logger
-	CRITICAL *log.Logger
-	BLUE     *log.Logger
-	path     string
-	i 	 func(v ...interface{}) string
-	w 	 func(v ...interface{}) string
-	c 	 func(v ...interface{}) string
-	b 	 func(v ...interface{}) string
-	winsize  int
+	scanning      *log.Logger
+	found         *log.Logger
+	notFound      *log.Logger
+	result        *log.Logger
+	empty         *log.Logger
+	path          string
+	scanningPrint func(v ...interface{}) string
+	foundPrint    func(v ...interface{}) string
+	notFoundPrint func(v ...interface{}) string
+	resultPrint   func(v ...interface{}) string
+	winsize       int
+	logger        []string
+	dir           []string
+	files         []string
 )
 
 type Winsize struct {
@@ -37,59 +42,94 @@ type Winsize struct {
 
 func main() {
 
-	winsize = getWidth()
+	// get size of window
+	winsize       =  getWidth()
 
-	info := gocolorize.NewColor("green+h:black")
-	blue := gocolorize.NewColor("black+i:black")
-	warning := gocolorize.NewColor("yellow+i:black")
-	critical := gocolorize.NewColor("black+i:red")
-
-	i = info.Paint
-	w = warning.Paint
-	c = critical.Paint
-	b = blue.Paint
-
-	INFO     = log.New(os.Stdout, i("SCANNING       "), log.Ldate|log.Lmicroseconds|log.Lshortfile)
-	WARNING  = log.New(os.Stdout, w("FOUND          "), log.Ldate|log.Lmicroseconds|log.Lshortfile)
-	CRITICAL = log.New(os.Stdout, c("NOT FOUND      "), log.Ldate|log.Lmicroseconds|log.Lshortfile)
-	BLUE     = log.New(os.Stdout, b("               "), log.Ldate|log.Lmicroseconds|log.Lshortfile)
+	scanningColor := gocolorize.NewColor("green+h:black")
+	resultColor   := gocolorize.NewColor("white+h:black")
+	foundColor    := gocolorize.NewColor("black+i:yellow")
+	notFoundColor := gocolorize.NewColor("black+i:red")
+	scanningPrint =  scanningColor.Paint
+	foundPrint    =  foundColor.Paint
+	notFoundPrint =  notFoundColor.Paint
+	resultPrint   =  resultColor.Paint
+	scanning      =  log.New(os.Stdout, scanningPrint("Scanning  -->  "), 0)
+	found         =  log.New(os.Stdout, foundPrint("Found          "), 0)
+	notFound      =  log.New(os.Stdout, notFoundPrint("Not found      "), 0)
+	result        =  log.New(os.Stdout, resultPrint("Result    -->  "), 0)
+	empty         =  log.New(os.Stdout, resultPrint("               "), 0)
 
 	if len(os.Args) == 3 {
 		if os.Args[1] == "--check"  && os.Args[2] != "" {
 			path = os.Args[2]
-			err := readDir(os.Args[2], false)
-			if err != nil {
-				panic(err)
+			// initiate read directories
+			readDir(os.Args[2], false)
+
+			// scan result
+			for j:=0;j<2;j++ {
+				line := generateSpaces(" ")
+				empty.Println(resultPrint(line))
 			}
+			line := generateSpaces(" Broken dependencies:")
+			empty.Println(resultPrint(line))
+
+			line = generateSpaces(" ")
+			empty.Println(resultPrint(line))
+
+			for i := 0; i < len(logger); i++ {
+				newtext := generateSpaces(" " + logger[i])
+				result.Println(resultPrint(newtext))
+			}
+			for j:=0;j<2;j++ {
+				line := generateSpaces(" ")
+				empty.Println(resultPrint(line))
+			}
+			// scan Details
+			total := generateSpaces(
+				" Broken dependencies: " + strconv.Itoa(len(logger)) +
+				"   |   " +
+				"Directories scanned: " + strconv.Itoa(len(dir)) +
+				"   |   " +
+				"Files opened: " + strconv.Itoa(len(files)),
+			)
+			empty.Println(resultPrint(total))
+
+			footer := generateSpaces(" ")
+			empty.Println(resultPrint(footer))
 		}
 	}
 }
 
-func readDir(diretorio string, signal bool) (error) {
-	files, err := ioutil.ReadDir(diretorio)
+func readDir(directory string, signal bool) {
+	files, err := ioutil.ReadDir(directory)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	for _, file := range files {
 		// check for files with extension .php
 		if strings.Contains(file.Name(), ".php") {
 			filename := file.Name()
 			if signal {
-				filename = diretorio + "/" + file.Name()
+				filename = directory + "/" + file.Name()
 			}
 			readFile(filename, "null", signal)
 		} else if file.IsDir() {
-			readDir(diretorio +"/"+ file.Name(), true)
+			if len(dir) == 0 {
+				dir = append(dir, directory +"/"+ file.Name())
+			}
+
+			registerDir(directory +"/"+ file.Name())
+			readDir(directory +"/"+ file.Name(), true)
 		}
 	}
-	return nil
+	return
 }
 
 func generateLog(dependencia, fileorigem string) {
 	// Check if file exists
 	_, err := os.Stat("dependency_logs.txt")
 	if err != nil {
-		INFO.Println("Create file for log generation")
+		scanning.Println("Create file for log generation")
 		// Create a new file
 		file, err := os.Create("dependency_logs.txt")
 		if err != nil {
@@ -110,8 +150,24 @@ func generateLog(dependencia, fileorigem string) {
 			log.Fatalln(err)
 		}
 	}()
+
 	newtext := generateSpaces(" " + dependencia + " origin -> " + fileorigem)
-	CRITICAL.Println(c(newtext))
+	notFound.Println(notFoundPrint(newtext))
+
+	text := dependencia + " origin -> " + fileorigem
+	if len(logger) == 0 {
+		logger = append(logger, text)
+	}
+
+	// check if logger exists
+	exists, _ := inArray(text, logger)
+	if !exists {
+		// @todo improvement for scanning this routes ../
+		index := strings.Index(text, "../")
+		if index == -1 {
+			logger = append(logger, text)
+		}
+	}
 }
 
 func readFile(file, anterior string, signal bool) {
@@ -125,33 +181,39 @@ func readFile(file, anterior string, signal bool) {
 	if err != nil {
 		generateLog(pathFile, anterior)
 	} else {
-		newtext := generateSpaces(" file: " + pathFile)
-		INFO.Println(i(newtext))
+
+		if len(files) == 0 {
+			files = append(files, pathFile)
+		}
+		registerFile(pathFile)
+
+		newtext := generateSpaces(" " +pathFile)
+		scanning.Println(scanningPrint(newtext))
 
 		scanner := bufio.NewScanner(nFile)
 		scanner.Split(bufio.ScanLines)
 
-		newtext = generateSpaces(" dependency")
-		INFO.Println(i(newtext))
+		// Only scan for "require*" or "include*" entries
+		// @todo improvement for "use" namespaces
 		for scanner.Scan() {
 			text := scanner.Text()
-			indexRequire := strings.Index(text, "require")
+			indexRequire := strings.Index(text, "require") // require or require_once
 			if indexRequire == 0 {
 				split := strings.Split(text, "\"")
 				if len(split) == 3 {
 					newtext = generateSpaces(" [ require ] found: " + split[1] + " in file -> " + pathFile)
-					WARNING.Println(w(newtext))
-					if strings.Contains(split[1], ".php") {
+					found.Println(foundPrint(newtext))
+					if strings.Contains(split[1], ".php") { // only files *.php
 						readFile(split[1], pathFile, false)
 					}
 				}
 			}
-			indexInclude := strings.Index(text, "include")
+			indexInclude := strings.Index(text, "include") // include or include_once
 			if indexInclude == 0 {
 				split := strings.Split(text, "\"")
 				if len(split) == 3 {
 					newtext = generateSpaces(" [ include ] found: " + split[1] + " in file -> " + pathFile)
-					WARNING.Println(w(newtext))
+					found.Println(foundPrint(newtext))
 					if strings.Contains(split[1], ".php") {
 						readFile(split[1], pathFile, false)
 					}
@@ -159,10 +221,38 @@ func readFile(file, anterior string, signal bool) {
 			}
 		}
 	}
+	return
+}
+
+func registerFile(name string) {
+	exists, _ := inArray(name, files)
+	if !exists {
+		files = append(files, name)
+	}
+}
+
+func registerDir(name string) {
+	exists, _ := inArray(name, dir)
+	if !exists {
+		dir = append(dir, name)
+	}
+}
+
+func inArray(val string, array []string) (exists bool, index int) {
+	exists = false
+	index = -1;
+	for i, v := range array {
+		if val == v {
+			index = i
+			exists = true
+			return
+		}
+	}
+	return
 }
 
 func generateSpaces(str string) string {
-	length := (winsize-55)-len(str)
+	length := (winsize-15)-len(str)
 	s3 := []byte(str)
 	for i := 0; i < length; i++ {
 		s3 = append(s3, '\u0020')
