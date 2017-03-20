@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v0.0.5
+
+_Release: 2017-03-20_
+
+- Correção de inconsistência no search das inclusões nos
+  arquivos .php
+
+
 ## v0.0.4
 
 _Release: 2017-03-17_
