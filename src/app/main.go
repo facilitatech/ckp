@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"unsafe"
 	"strconv"
-	"fmt"
 )
 
 var (
@@ -199,7 +198,6 @@ func readFile(file, anterior string, signal bool) {
 		for scanner.Scan() {
 			text := scanner.Text()
 			indexRequire := strings.Index(text, "require") // require or require_once
-			fmt.Println(indexRequire)
 			if indexRequire != -1 {
 				split := strings.Split(text, "\"")
 				if len(split) == 3 {
