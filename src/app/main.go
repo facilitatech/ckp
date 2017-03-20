@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"unsafe"
 	"strconv"
+	"fmt"
 )
 
 var (
@@ -198,7 +199,8 @@ func readFile(file, anterior string, signal bool) {
 		for scanner.Scan() {
 			text := scanner.Text()
 			indexRequire := strings.Index(text, "require") // require or require_once
-			if indexRequire == 0 {
+			fmt.Println(indexRequire)
+			if indexRequire != -1 {
 				split := strings.Split(text, "\"")
 				if len(split) == 3 {
 					newtext = generateSpaces(" [ require ] found: " + split[1] + " in file -> " + pathFile)
@@ -209,7 +211,7 @@ func readFile(file, anterior string, signal bool) {
 				}
 			}
 			indexInclude := strings.Index(text, "include") // include or include_once
-			if indexInclude == 0 {
+			if indexInclude != -1 {
 				split := strings.Split(text, "\"")
 				if len(split) == 3 {
 					newtext = generateSpaces(" [ include ] found: " + split[1] + " in file -> " + pathFile)
