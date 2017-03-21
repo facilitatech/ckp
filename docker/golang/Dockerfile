@@ -8,6 +8,7 @@ ENV GOBINARIES /go/bin
 WORKDIR $GOBINARIES
 RUN go get github.com/cespare/reflex
 RUN go get github.com/agtorre/gocolorize
+RUN apt-get update && apt-get upgrade -y && apt-get install vim -y
 
 ENV PORT 6060
 # docker/app port
