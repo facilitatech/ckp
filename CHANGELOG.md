@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## v0.0.6
+
+_Release: 2017-03-21_
+
+- Refatoração e implementação de novas features
+
+    - registerFile(name string) bool, retornando um
+      booleano, usado na func de readFile() para verificar
+      os arquivos que já foram escaneados, sendo ignorados esses
+      arquivos em uma segunda leitura
+    - Criado func registerLog para separar trecho de código da func
+      generateLog, passado o nome do arquivo e o próprio slice que
+      armazena os nomes dos arquivos escaneados
+    - Criado func resultDisplay que monta o resultado dos arquivos e
+      pastas afetadas pelo escaneamento e printa os arquivos
+      que possuem dependências quebradas
+    - Criado func writeLog que escreve as dependências quebradas
+      em um arquivo txt
+
+
 ## v0.0.5
 
 _Release: 2017-03-20_
