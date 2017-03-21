@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"unsafe"
 	"strconv"
+	"fmt"
 )
 
 var (
@@ -64,40 +65,64 @@ func main() {
 			path = os.Args[2]
 			// initiate read directories
 			readDir(os.Args[2], false)
-
-			// scan result
-			for j:=0;j<2;j++ {
-				line := generateSpaces(" ")
-				empty.Println(resultPrint(line))
-			}
-			line := generateSpaces(" Broken dependencies:")
-			empty.Println(resultPrint(line))
-
-			line = generateSpaces(" ")
-			empty.Println(resultPrint(line))
-
-			for i := 0; i < len(logger); i++ {
-				newtext := generateSpaces(" " + logger[i])
-				result.Println(resultPrint(newtext))
-			}
-			for j:=0;j<2;j++ {
-				line := generateSpaces(" ")
-				empty.Println(resultPrint(line))
-			}
-			// scan Details
-			total := generateSpaces(
-				" Broken dependencies: " + strconv.Itoa(len(logger)) +
-				"   |   " +
-				"Directories scanned: " + strconv.Itoa(len(dir)) +
-				"   |   " +
-				"Files opened: " + strconv.Itoa(len(files)),
-			)
-			empty.Println(resultPrint(total))
-
-			footer := generateSpaces(" ")
-			empty.Println(resultPrint(footer))
+			resultDisplay()
 		}
 	}
+}
+
+func resultDisplay() {
+	// scan result
+	for j:=0;j<2;j++ {
+		line := generateSpaces(" ")
+		empty.Println(resultPrint(line))
+	}
+	line := generateSpaces(" Broken dependencies:")
+	empty.Println(resultPrint(line))
+
+	line = generateSpaces(" ")
+	empty.Println(resultPrint(line))
+
+	err := writeLog()
+	if err != nil {
+		newtext := generateSpaces("Error on write dependency_logs.txt log")
+		result.Println(resultPrint(newtext))
+	}
+
+	for j:=0;j<2;j++ {
+		line := generateSpaces(" ")
+		empty.Println(resultPrint(line))
+	}
+	// scan Details
+	total := generateSpaces(
+		" Broken dependencies: " + strconv.Itoa(len(logger)) +
+			"   |   " +
+			"Directories scanned: " + strconv.Itoa(len(dir)) +
+			"   |   " +
+			"Files opened: " + strconv.Itoa(len(files)),
+	)
+	empty.Println(resultPrint(total))
+
+	footer := generateSpaces(" ")
+	empty.Println(resultPrint(footer))
+}
+
+func writeLog() error {
+	file, err := os.OpenFile("dependency_logs.txt", os.O_CREATE|os.O_RDWR, 0755)
+	if err != nil {
+		newtext := generateSpaces("File dependency_logs.txt not found")
+		result.Println(resultPrint(newtext))
+	}
+	defer file.Close()
+	w := bufio.NewWriter(file)
+
+	for i := 0; i < len(logger); i++ {
+		newtext := generateSpaces(" " + logger[i])
+		result.Println(resultPrint(newtext))
+		fmt.Fprintf(w, "%v\n", newtext)
+	}
+	w.Flush()
+
+	return err
 }
 
 func readDir(directory string, signal bool) {
@@ -117,7 +142,6 @@ func readDir(directory string, signal bool) {
 			if len(dir) == 0 {
 				dir = append(dir, directory +"/"+ file.Name())
 			}
-
 			registerDir(directory +"/"+ file.Name())
 			readDir(directory +"/"+ file.Name(), true)
 		}
@@ -158,16 +182,7 @@ func generateLog(dependencia, fileorigem string) {
 	if len(logger) == 0 {
 		logger = append(logger, text)
 	}
-
-	// check if logger exists
-	exists, _ := inArray(text, logger)
-	if !exists {
-		// @todo improvement for scanning this routes ../
-		index := strings.Index(text, "../")
-		if index == -1 {
-			logger = append(logger, text)
-		}
-	}
+	logger = registerLog(text, logger)
 }
 
 func readFile(file, anterior string, signal bool) {
@@ -181,41 +196,43 @@ func readFile(file, anterior string, signal bool) {
 	if err != nil {
 		generateLog(pathFile, anterior)
 	} else {
-
 		if len(files) == 0 {
 			files = append(files, pathFile)
 		}
-		registerFile(pathFile)
+		checkScann := registerFile(pathFile)
+		if !checkScann {
+			//return
+			newtext := generateSpaces(" " + pathFile)
+			scanning.Println(scanningPrint(newtext))
 
-		newtext := generateSpaces(" " +pathFile)
-		scanning.Println(scanningPrint(newtext))
+			scanner := bufio.NewScanner(nFile)
+			scanner.Split(bufio.ScanLines)
 
-		scanner := bufio.NewScanner(nFile)
-		scanner.Split(bufio.ScanLines)
-
-		// Only scan for "require*" or "include*" entries
-		// @todo improvement for "use" namespaces
-		for scanner.Scan() {
-			text := scanner.Text()
-			indexRequire := strings.Index(text, "require") // require or require_once
-			if indexRequire != -1 {
-				split := strings.Split(text, "\"")
-				if len(split) == 3 {
-					newtext = generateSpaces(" [ require ] found: " + split[1] + " in file -> " + pathFile)
-					found.Println(foundPrint(newtext))
-					if strings.Contains(split[1], ".php") { // only files *.php
-						readFile(split[1], pathFile, false)
+			// Only scan for "require*" or "include*" entries
+			// @todo improvement for "use" namespaces
+			for scanner.Scan() {
+				text := scanner.Text()
+				indexRequire := strings.Index(text, "require") // require or require_once
+				if indexRequire != -1 {
+					split := strings.Split(text, "\"")
+					if len(split) == 3 {
+						newtext = generateSpaces(" [ require ] found: " + split[1] + " in file -> " + pathFile)
+						found.Println(foundPrint(newtext))
+						if strings.Contains(split[1], ".php") {
+							// only files *.php
+							readFile(split[1], pathFile, false)
+						}
 					}
 				}
-			}
-			indexInclude := strings.Index(text, "include") // include or include_once
-			if indexInclude != -1 {
-				split := strings.Split(text, "\"")
-				if len(split) == 3 {
-					newtext = generateSpaces(" [ include ] found: " + split[1] + " in file -> " + pathFile)
-					found.Println(foundPrint(newtext))
-					if strings.Contains(split[1], ".php") {
-						readFile(split[1], pathFile, false)
+				indexInclude := strings.Index(text, "include") // include or include_once
+				if indexInclude != -1 {
+					split := strings.Split(text, "\"")
+					if len(split) == 3 {
+						newtext = generateSpaces(" [ include ] found: " + split[1] + " in file -> " + pathFile)
+						found.Println(foundPrint(newtext))
+						if strings.Contains(split[1], ".php") {
+							readFile(split[1], pathFile, false)
+						}
 					}
 				}
 			}
@@ -224,11 +241,25 @@ func readFile(file, anterior string, signal bool) {
 	return
 }
 
-func registerFile(name string) {
+func registerLog(text string, logger []string) []string {
+	// check if logger exists
+	exists, _ := inArray(text, logger)
+	if !exists {
+		// @todo improvement for scanning this routes ../
+		index := strings.Index(text, "../")
+		if index == -1 {
+			logger = append(logger, text)
+		}
+	}
+	return logger
+}
+
+func registerFile(name string) bool {
 	exists, _ := inArray(name, files)
 	if !exists {
 		files = append(files, name)
 	}
+	return exists
 }
 
 func registerDir(name string) {
