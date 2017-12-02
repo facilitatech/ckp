@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## v0.0.7
+
+_Release: 2017-12-02_
+
+- Criado licence para o projeto
+- Alterado versão do docker-compose para a 3
+- Refatorado o Dockerfile
+   - Enviado as dependências para o GOROOT onde ficam isoladas
+     do diretório onde é feito o volume
+   - Alterado versão do Go para 1.9
+- Alterado nome da empresa que mantém projeto
+- Ignorado arquivos e atualizado README
+
+
 ## v0.0.6
 
 _Release: 2017-03-21_
