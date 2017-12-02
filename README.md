@@ -5,7 +5,7 @@
 Clone o repositório na pasta de preferência
 ```bash
 cd /srv
-git clone https://github.com/totalbr/dependency-check-php
+git clone https://github.com/facilitatech/dependency-check-php
 ```
 
 **Executar o arquivo `init.sh` para iniciar os containers**
@@ -13,24 +13,22 @@ Execute a opção número `3` para efetuar o `build` logo em seguida executar no
 com a opção número `1`
 
 ```bash
-
-https://github.com/totalbr/dependency-check-php for the canonical source repository
+https://github.com/facilitatech/dependency-check-php for the canonical source repository 
 Copyright (c) facilita.tech - 2016-2017
-(http://facilita.tech)
-
-  __            _ _ _ _         _            _
- / _| __ _  ___(_) (_) |_ __ _ | |_ ___  ___| |__
-| |_ / _` |/ __| | | | __/ _` || __/ _ \/ __| '_ \
+(http://facilita.tech)  
+ 
+  __            _ _ _ _         _            _     
+ / _| __ _  ___(_) (_) |_ __ _ | |_ ___  ___| |__  
+| |_ / _` |/ __| | | | __/ _` || __/ _ \/ __| '_ \ 
 |  _| (_| | (__| | | | || (_| || ||  __/ (__| | | |
 |_|  \__,_|\___|_|_|_|\__\__,_(_)__\___|\___|_| |_|
-
-dependency-check-php
+                                                   
+dependency-check-php 
 
 DOCKER
-Generate new containers ? [ 1 ]
-Delete all containers ?   [ 2 ]
+Generate new containers ? [ 1 ] 
+Delete all containers ?   [ 2 ] 
 Start new build ?         [ 3 ]
-
 ```
 
 Exemplo de como deve ser o retorno depois da execução da opção número `1`

@@ -1,4 +1,5 @@
 .idea/
+.DS_Store
 bin/
 pkg/
 src/app/dependency_logs.txt
