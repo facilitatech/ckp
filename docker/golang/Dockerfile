@@ -1,7 +1,7 @@
 FROM golang:1.9
 
 # app specific env
-ENV BUILDPATH /go/src/app
+ENV BUILDPATH /go/src/
 ENV TOOLS /var/exec
 ENV GOBINARIES /go/bin
 
@@ -10,7 +10,6 @@ WORKDIR $GOBINARIES
 RUN apt-get update && apt-get upgrade -y && apt-get install vim -y
 
 RUN go get github.com/cespare/reflex
-RUN go get github.com/agtorre/gocolorize
 RUN go get github.com/agtorre/gocolorize
 RUN cd /go/src/ && mv github.com /usr/local/go/src/
 
@@ -23,6 +22,3 @@ RUN chmod +x $TOOLS/build.sh
 # Execute reflex.
 WORKDIR $BUILDPATH
 CMD ["reflex","-c","/var/exec/reflex.conf"]
-
-# docker/app port
-EXPOSE 6060
