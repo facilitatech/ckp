@@ -24,8 +24,8 @@ clear
 
 # Cabeçalho
 echo ' '
-printf "${GREEN}https://github.com/facilitatech/dependency-check-php for the canonical source repository \n"
-printf "Copyright (c) facilita.tech - 2016-2017\n"
+printf "${GREEN}https://github.com/facilitatech/ckp for the canonical source repository \n"
+printf "Copyright (c) facilita.tech - 2016-2018\n"
 printf "(http://facilita.tech) ${NC}"
 echo ' '
 
@@ -41,12 +41,12 @@ if [ $ENVIRONMENT == 'LINUX' ]; then
     if which figlet > /dev/null; then
         printf "${GREEN}"
         figlet facilita.tech
-	printf "${GREEN}dependency-check-php \n${NC}"
+	printf "${GREEN}ckp \n${NC}"
     else
         apt-get install -y figlet
         printf "${GREEN}"
         figlet facilita.tech
-	printf "${GREEN}dependency-check-php \n${NC}"
+	printf "${GREEN}ckp \n${NC}"
     fi
     echo ' '
     printf "${NC}"
@@ -54,7 +54,7 @@ else
 	if which figlet > /dev/null; then
 		printf "${GREEN}"
 		figlet facilita.tech
-		printf "${GREEN}dependency-check-php \n${NC}"
+		printf "${GREEN}ckp \n${NC}"
 	fi
 	printf "${NC}"
 echo ''

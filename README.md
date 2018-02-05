@@ -2,10 +2,16 @@
 
 ### Instalação
 
+```bash
+go get github.com/facilitatech/ckp
+```
+
+### Docker
+
 Clone o repositório na pasta de preferência
 ```bash
 cd /srv
-git clone https://github.com/facilitatech/dependency-check-php
+git clone https://github.com/facilitatech/ckp
 ```
 
 **Executar o arquivo `init.sh` para iniciar os containers**
@@ -37,17 +43,17 @@ Exemplo de como deve ser o retorno depois da execução da opção número `1`
 Generating new containers ...
 Name              Command               State    Ports
 --------------------------------------------------------
-app    reflex -c /var/exec/reflex ...   Up      6060/tcp
-app is up-to-date
+ckp    reflex -c /var/exec/reflex ...   Up      6060/tcp
+ckp is up-to-date
 Name              Command               State    Ports
 --------------------------------------------------------
-app    reflex -c /var/exec/reflex ...   Up      6060/tcp
+ckp    reflex -c /var/exec/reflex ...   Up      6060/tcp
 ```
 
 **Acessando o container**
 
 ```bash
-docker exec -it app bash
+docker exec -it ckp bash
 ```
 
 **Executando o binário**
@@ -57,5 +63,5 @@ o `--check` inicia o processo de analise dos arquivos e o segundo parâmetro
 deve ser a pasta onde encontra-se os arquivos com extensão `.php`
 
 ```bash
-app --check meus_arquivos
+ckp --check meus_arquivos
 ```
