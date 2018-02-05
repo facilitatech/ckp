@@ -1,4 +1,4 @@
-# dependency-check-php
+# ckp (Check php)
 
 ### Instalação
 
