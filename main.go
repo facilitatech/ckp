@@ -32,6 +32,8 @@ var (
 	logger        []string
 	dir           []string
 	files         []string
+
+	IgnoreFolders   = []string{}
 )
 
 type Winsize struct {
@@ -65,6 +67,31 @@ func main() {
 			path = os.Args[2]
 			// initiate read directories
 			readDir(os.Args[2], false)
+			resultDisplay()
+		}
+	}
+
+	if len(os.Args) >= 3 {
+		if os.Args[1] == "--diff"  && os.Args[2] != "" {
+			path = os.Args[2]
+
+			if len(os.Args) >= 5 {
+				if os.Args[3] == "--ignore" && os.Args[4] != "" {
+					split := strings.Split(os.Args[4], ",")
+					for i := range split {
+						removeSpace := strings.Trim(split[i], " ")
+						IgnoreFolders = append(IgnoreFolders, removeSpace)
+					}
+				}
+			}
+
+			// initiate read directories
+			pwd, err := os.Getwd()
+			if err != nil {
+				panic(err)
+			}
+			path := pwd + "/" + os.Args[2]
+			readRecursiveDir(path)
 			resultDisplay()
 		}
 	}
@@ -147,6 +174,23 @@ func readDir(directory string, signal bool) {
 		}
 	}
 	return
+}
+
+func readRecursiveDir(directory string) {
+	files, err := ioutil.ReadDir(directory)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			ignore, _ := inArray(file.Name(), IgnoreFolders)
+			if !ignore {
+				registerDir(directory + "/" + file.Name())
+				readRecursiveDir(directory + "/" + file.Name())
+			}
+		}
+	}
 }
 
 func generateLog(dependencia, fileorigem string) {
