@@ -1,6 +1,6 @@
-// dependency-check-php - Analisa dependências de programas php
-// https://github.com/totalbr/dependency-check-php for the canonical source repository
-// Copyright (c) facilita.tech - 2016-2017 (http://facilita.tech)
+// ckp - Check PHP files
+// https://github.com/facilitatech/ckp/ for the canonical source repository
+// Copyright (c) facilita.tech - 2016-2018 (http://facilita.tech)
 
 package main
 

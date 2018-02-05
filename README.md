@@ -1,4 +1,4 @@
-# ckp (Check php)
+# ckp - Check PHP files
 
 ### Instalação
 
