@@ -6,3 +6,4 @@ src/app/dependency_logs.txt
 src/github.com
 ckp_darwinx86_64
 ckp_linux86_64
+*.txt
