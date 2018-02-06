@@ -5,35 +5,38 @@
 package main
 
 import (
-	"io/ioutil"
-	"os"
-	"strings"
 	"bufio"
-	"log"
+	"bytes"
+	"fmt"
 	"github.com/agtorre/gocolorize"
+	"io/ioutil"
+	"log"
+	"os"
+	"strconv"
+	"strings"
 	"syscall"
 	"unsafe"
-	"strconv"
-	"fmt"
 )
 
 var (
-	scanning      *log.Logger
-	found         *log.Logger
-	notFound      *log.Logger
-	result        *log.Logger
-	empty         *log.Logger
-	path          string
-	scanningPrint func(v ...interface{}) string
-	foundPrint    func(v ...interface{}) string
-	notFoundPrint func(v ...interface{}) string
-	resultPrint   func(v ...interface{}) string
-	winsize       int
-	logger        []string
-	dir           []string
-	files         []string
-
-	IgnoreFolders   = []string{}
+	scanning        *log.Logger
+	found           *log.Logger
+	notFound        *log.Logger
+	result          *log.Logger
+	empty           *log.Logger
+	path            string
+	scanningPrint   func(v ...interface{}) string
+	foundPrint      func(v ...interface{}) string
+	notFoundPrint   func(v ...interface{}) string
+	resultPrint     func(v ...interface{}) string
+	winsize         int
+	logger          []string
+	dir             []string
+	files           []string
+	filesExists     []string
+	filesDontExists []string
+	filesDiffers    []string
+	IgnoreFolders   []string
 )
 
 type Winsize struct {
@@ -46,24 +49,24 @@ type Winsize struct {
 func main() {
 
 	// get size of window
-	winsize       =  getWidth()
+	winsize = getWidth()
 
 	scanningColor := gocolorize.NewColor("green+h:black")
-	resultColor   := gocolorize.NewColor("white+h:black")
-	foundColor    := gocolorize.NewColor("black+i:yellow")
+	resultColor := gocolorize.NewColor("white+h:black")
+	foundColor := gocolorize.NewColor("black+i:yellow")
 	notFoundColor := gocolorize.NewColor("black+i:red")
-	scanningPrint =  scanningColor.Paint
-	foundPrint    =  foundColor.Paint
-	notFoundPrint =  notFoundColor.Paint
-	resultPrint   =  resultColor.Paint
-	scanning      =  log.New(os.Stdout, scanningPrint("Scanning  -->  "), 0)
-	found         =  log.New(os.Stdout, foundPrint("Found          "), 0)
-	notFound      =  log.New(os.Stdout, notFoundPrint("Not found      "), 0)
-	result        =  log.New(os.Stdout, resultPrint("Result    -->  "), 0)
-	empty         =  log.New(os.Stdout, resultPrint("               "), 0)
+	scanningPrint = scanningColor.Paint
+	foundPrint = foundColor.Paint
+	notFoundPrint = notFoundColor.Paint
+	resultPrint = resultColor.Paint
+	scanning = log.New(os.Stdout, scanningPrint("Scanning  -->  "), 0)
+	found = log.New(os.Stdout, foundPrint("Found          "), 0)
+	notFound = log.New(os.Stdout, notFoundPrint("Not found      "), 0)
+	result = log.New(os.Stdout, resultPrint("Result    -->  "), 0)
+	empty = log.New(os.Stdout, resultPrint("               "), 0)
 
 	if len(os.Args) == 3 {
-		if os.Args[1] == "--check"  && os.Args[2] != "" {
+		if os.Args[1] == "--check" && os.Args[2] != "" {
 			path = os.Args[2]
 			// initiate read directories
 			readDir(os.Args[2], false)
@@ -71,27 +74,26 @@ func main() {
 		}
 	}
 
-	if len(os.Args) >= 3 {
-		if os.Args[1] == "--diff"  && os.Args[2] != "" {
+	if len(os.Args) >= 4 {
+		if os.Args[1] == "--diff" && os.Args[2] != "" && os.Args[3] != "" {
 			path = os.Args[2]
 
-			if len(os.Args) >= 5 {
-				if os.Args[3] == "--ignore" && os.Args[4] != "" {
-					split := strings.Split(os.Args[4], ",")
+			if len(os.Args) >= 6 {
+				if os.Args[4] == "--ignore" && os.Args[5] != "" {
+					split := strings.Split(os.Args[5], ",")
 					for i := range split {
 						removeSpace := strings.Trim(split[i], " ")
 						IgnoreFolders = append(IgnoreFolders, removeSpace)
 					}
 				}
 			}
-
 			// initiate read directories
 			pwd, err := os.Getwd()
 			if err != nil {
 				panic(err)
 			}
 			path := pwd + "/" + os.Args[2]
-			readRecursiveDir(path)
+			readRecursiveDir(path, os.Args[2], os.Args[3])
 			resultDisplay()
 		}
 	}
@@ -99,55 +101,55 @@ func main() {
 
 func resultDisplay() {
 	// scan result
-	for j:=0;j<2;j++ {
+	for j := 0; j < 2; j++ {
 		line := generateSpaces(" ")
 		empty.Println(resultPrint(line))
 	}
-	line := generateSpaces(" Broken dependencies:")
-	empty.Println(resultPrint(line))
 
-	line = generateSpaces(" ")
-	empty.Println(resultPrint(line))
-
-	err := writeLog()
-	if err != nil {
-		newtext := generateSpaces("Error on write dependency_logs.txt log")
-		result.Println(resultPrint(newtext))
+	if len(logger) != 0 {
+		writeLog("dependency_logs.txt", logger)
 	}
 
-	for j:=0;j<2;j++ {
-		line := generateSpaces(" ")
-		empty.Println(resultPrint(line))
+	if len(filesDiffers) != 0 {
+		writeLog("differ_logs.txt", filesDiffers)
 	}
-	// scan Details
-	total := generateSpaces(
-		" Broken dependencies: " + strconv.Itoa(len(logger)) +
-			"   |   " +
-			"Directories scanned: " + strconv.Itoa(len(dir)) +
-			"   |   " +
-			"Files opened: " + strconv.Itoa(len(files)),
-	)
-	empty.Println(resultPrint(total))
+
+	brokenDependencies := generateSpaces("Broken dependencies: " + strconv.Itoa(len(logger)))
+	empty.Println(resultPrint(brokenDependencies))
+	directoriesScanned := generateSpaces("Directories scanned: " + strconv.Itoa(len(dir)))
+	empty.Println(resultPrint(directoriesScanned))
+	filesOpened := generateSpaces("Files opened: " + strconv.Itoa(len(files)))
+	empty.Println(resultPrint(filesOpened))
+	filesDiffers := generateSpaces("Files differs: " + strconv.Itoa(len(filesDiffers)))
+	empty.Println(resultPrint(filesDiffers))
 
 	footer := generateSpaces(" ")
 	empty.Println(resultPrint(footer))
 }
 
-func writeLog() error {
-	file, err := os.OpenFile("dependency_logs.txt", os.O_CREATE|os.O_RDWR, 0755)
+func writeLog(fileToWrite string, data []string) error {
+	openFile, err := os.OpenFile(fileToWrite, os.O_CREATE|os.O_RDWR, 0755)
 	if err != nil {
-		newtext := generateSpaces("File dependency_logs.txt not found")
-		result.Println(resultPrint(newtext))
+		panic(err)
 	}
-	defer file.Close()
-	w := bufio.NewWriter(file)
+	defer openFile.Close()
+	w := bufio.NewWriter(openFile)
 
-	for i := 0; i < len(logger); i++ {
-		newtext := generateSpaces(" " + logger[i])
-		result.Println(resultPrint(newtext))
-		fmt.Fprintf(w, "%v\n", newtext)
+	for i := 0; i < len(data); i++ {
+		fmt.Fprintf(w, "%v\n", data[i])
 	}
 	w.Flush()
+
+	space := generateSpaces(" ")
+	result.Println(resultPrint(space))
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	newtext := generateSpaces("Log: " + pwd + "/" + fileToWrite)
+	empty.Println(resultPrint(newtext))
 
 	return err
 }
@@ -167,28 +169,79 @@ func readDir(directory string, signal bool) {
 			readFile(filename, "null", signal)
 		} else if file.IsDir() {
 			if len(dir) == 0 {
-				dir = append(dir, directory +"/"+ file.Name())
+				dir = append(dir, directory+"/"+file.Name())
 			}
-			registerDir(directory +"/"+ file.Name())
-			readDir(directory +"/"+ file.Name(), true)
+			registerDir(directory + "/" + file.Name())
+			readDir(directory+"/"+file.Name(), true)
 		}
 	}
 	return
 }
 
-func readRecursiveDir(directory string) {
+func readRecursiveDir(directory, dirComFirst, dirComSecond string) {
 	files, err := ioutil.ReadDir(directory)
 	if err != nil {
 		panic(err)
 	}
-
 	for _, file := range files {
+		fileOrDirName := directory + "/" + file.Name()
 		if file.IsDir() {
+			// Check if file aren't in the []IgnoreFolders
 			ignore, _ := inArray(file.Name(), IgnoreFolders)
 			if !ignore {
-				registerDir(directory + "/" + file.Name())
-				readRecursiveDir(directory + "/" + file.Name())
+				registerDir(fileOrDirName)
+				readRecursiveDir(fileOrDirName, dirComFirst, dirComSecond)
 			}
+			// if is continue to another record
+			continue
+		}
+		// if is not a folder put on into  -> openFiles -> compareBetweenTwoFiles
+		compareBetweenTwoFiles(openTwoFiles(fileOrDirName, dirComFirst, dirComSecond))
+	}
+}
+
+func openTwoFiles(file, dirComFirst, dirComSecond string) ([]byte, []byte, string) {
+	// Register file for doesn't scan again
+	checkScann := registerFile(file)
+	//fmt.Println(file)
+	if !checkScann {
+
+		fileToCompare := strings.Replace(file, dirComFirst, dirComSecond, -1)
+
+		// Read the first file to compare with dt2
+		dt1, err := ioutil.ReadFile(file)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Check if another file exists in the target
+		_, err = os.Stat(fileToCompare)
+		if err != nil {
+			if os.IsNotExist(err) {
+				register(fileToCompare, filesDontExists)
+				return []byte{}, []byte{}, ""
+			}
+		}
+
+		register(fileToCompare, filesExists)
+
+		dt2, err := ioutil.ReadFile(fileToCompare)
+		if err != nil {
+			log.Fatal(err)
+		}
+		newtext := generateSpaces(" " + file)
+		scanning.Println(scanningPrint(newtext))
+
+		return dt1, dt2, file
+	}
+	return []byte{}, []byte{}, ""
+}
+
+func compareBetweenTwoFiles(b1, b2 []byte, text string) {
+	if text != "" {
+		result := bytes.Compare(b1, b2)
+		if result != 0 {
+			registerDiffer(text)
 		}
 	}
 }
@@ -230,7 +283,7 @@ func generateLog(dependencia, fileorigem string) {
 }
 
 func readFile(file, anterior string, signal bool) {
-	pathFile := path +"/"+ file
+	pathFile := path + "/" + file
 
 	if signal {
 		pathFile = file
@@ -298,6 +351,22 @@ func registerLog(text string, logger []string) []string {
 	return logger
 }
 
+func registerDiffer(name string) bool {
+	exists, _ := inArray(name, filesDiffers)
+	if !exists {
+		filesDiffers = append(filesDiffers, name)
+	}
+	return exists
+}
+
+func register(name string, fileRegister []string) bool {
+	exists, _ := inArray(name, fileRegister)
+	if !exists {
+		fileRegister = append(fileRegister, name)
+	}
+	return exists
+}
+
 func registerFile(name string) bool {
 	exists, _ := inArray(name, files)
 	if !exists {
@@ -315,7 +384,7 @@ func registerDir(name string) {
 
 func inArray(val string, array []string) (exists bool, index int) {
 	exists = false
-	index = -1;
+	index = -1
 	for i, v := range array {
 		if val == v {
 			index = i
@@ -327,7 +396,7 @@ func inArray(val string, array []string) (exists bool, index int) {
 }
 
 func generateSpaces(str string) string {
-	length := (winsize-15)-len(str)
+	length := (winsize - 15) - len(str)
 	s3 := []byte(str)
 	for i := 0; i < length; i++ {
 		s3 = append(s3, '\u0020')
