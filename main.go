@@ -66,7 +66,7 @@ func main() {
 	empty = log.New(os.Stdout, resultPrint("               "), 0)
 
 	if len(os.Args) == 3 {
-		if os.Args[1] == "--check" && os.Args[2] != "" {
+		if os.Args[1] == "--check-dependencies" && os.Args[2] != "" {
 			path = os.Args[2]
 			// initiate read directories
 			readDir(os.Args[2], false)
