@@ -40,6 +40,7 @@ var (
 	filesDiffers    []string
 	IgnoreFolders   []string
 	params          = new(Params)
+	puts            = fmt.Println
 )
 
 const (
@@ -54,12 +55,22 @@ type Winsize struct {
 }
 
 type Params struct {
-	options []string
+	options  []string
+	indexof  map[string]int
+	position map[int]string
 }
 
 func (p *Params) Set(params []string) {
-	for i := range params {
-		p.options = append(p.options, params[i])
+	if len(params) > 1 {
+
+		p.indexof = make(map[string]int, len(params))
+		p.position = make(map[int]string, len(params))
+
+		for i := range params {
+			p.options = append(p.options, params[i])
+			p.indexof[params[i]] = int(i)
+			p.position[i] = params[i]
+		}
 	}
 }
 
@@ -75,13 +86,31 @@ func (p *Params) Count() int {
 	return len(p.options)
 }
 
-func (p *Params) hasExport() bool {
+func (p *Params) IndexOf(name string) int {
+	return p.indexof[name]
+}
+
+func (p *Params) Position(index int) string {
+	return p.position[index]
+}
+
+func (p *Params) Has(option string) bool {
 	for i := range p.options {
-		if p.options[i] == "--export" {
+		if p.options[i] == option {
 			return true
 		}
 	}
 	return false
+}
+
+func (p *Params) IsFolderExists(dir string) bool {
+	_, err := os.Stat(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
 }
 
 func main() {
@@ -91,6 +120,8 @@ func main() {
 
 	// Get size of terminal window where the ckp is running.
 	winsize = getWidth()
+
+	params.PrintHelp()
 
 	scanningColor := gocolorize.NewColor("green+h:black")
 	resultColor := gocolorize.NewColor("white+h:black")
@@ -120,10 +151,26 @@ func main() {
 	// This session initialize diff analysis and your options
 	// --ignore Ignore folders who which are not part of the process
 	// --export Export the data obtained from the diffs
-	if len(os.Args) >= 4 {
-		if os.Args[1] == "--diff" && os.Args[2] != "" && os.Args[3] != "" {
-			path = os.Args[2]
+	if params.Count() >= 4 {
+		if params.Has("--diff") {
 
+			positionDiff := params.IndexOf("--diff") + 1
+			if (params.Count() - positionDiff) < 2 {
+				puts("Not found folders for analysis!")
+				puts("Usage:")
+				puts("    Help: ckp --help")
+				os.Exit(2)
+			}
+
+			path1 := params.Position(params.IndexOf("--diff") + 1)
+			path2 := params.Position(params.IndexOf("--diff") + 2)
+
+			if !params.IsFolderExists(path1) || !params.IsFolderExists(path2) {
+				puts("Not found folders for analysis!")
+				puts("Usage:")
+				puts("    Help: ckp --help")
+				os.Exit(2)
+			}
 			if len(os.Args) >= 6 {
 				if os.Args[4] == "--ignore" && os.Args[5] != "" {
 					split := strings.Split(os.Args[5], ",")
@@ -132,17 +179,15 @@ func main() {
 						IgnoreFolders = append(IgnoreFolders, removeSpace)
 					}
 				}
-				if len(os.Args) == 7 {
-					if os.Args[6] == "--export" {
-						pwd, err := os.Getwd()
-						if err != nil {
-							panic(err)
-						}
-						err = os.MkdirAll(pwd+"/"+nameDirDiffs, 0755)
-						if err != nil {
-							panic(err)
-						}
-					}
+			}
+			if params.Has("--export") && params.Count() >= 5 {
+				pwd, err := os.Getwd()
+				if err != nil {
+					panic(err)
+				}
+				err = os.MkdirAll(pwd+"/"+nameDirDiffs, 0755)
+				if err != nil {
+					panic(err)
 				}
 			}
 			// initiate read directories
@@ -150,10 +195,52 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			path := pwd + "/" + os.Args[2]
-			readRecursiveDir(path, os.Args[2], os.Args[3])
+			path := pwd + "/" + path1
+			readRecursiveDir(path, path1, path2)
 			params.ResultDisplay()
 		}
+	}
+}
+
+func (p *Params) PrintHelp() {
+	if p.Has("--help") {
+		c := exec.Command("clear")
+		c.Stdout = os.Stdout
+		c.Run()
+
+		puts("NAME")
+		puts("      ckp - Check PHP files")
+		puts("")
+		puts("SYNOPSIS")
+		puts("      ckp [OPTIONS]... FOLDER")
+		puts("")
+		puts("DESCRIPTION")
+		puts("      Check PHP dependencies and diff whatever files")
+		puts("")
+		puts("      --check-dependencies path/your/project")
+		puts("      		Check all broken dependencies of your project PHP has")
+		puts(" ")
+		puts("      --diff /var/www/app1 /var/www/app2")
+		puts("      		Make diff between two folders recursively")
+		puts(" ")
+		puts("      --ignore vendor,.git,images,css,js")
+		puts("      		Ignore folders, this only work with --diff")
+		puts(" ")
+		puts("      --export")
+		puts("      		Export diffs file into folder, this only work with --diff")
+		puts(" ")
+		puts("AUTHOR")
+		puts("      Lucas Alves")
+		puts(" ")
+		puts("REPORTING BUGS")
+		puts("      Report bugs on <https://github.com/facilitatech/ckp/issues>")
+		puts(" ")
+		puts("COPYRIGHT")
+		puts("      Copyright (c) 2017 Facilita.tech Author.")
+		puts("      BSD ")
+		puts("      See the LICENCE: <https://github.com/facilitatech/ckp/blob/master/LICENSE>")
+		puts(" ")
+		os.Exit(2)
 	}
 }
 
@@ -170,7 +257,7 @@ func (p *Params) ResultDisplay() {
 
 	if len(filesDiffers) != 0 {
 		writeLog("differ_logs.txt", filesDiffers)
-		if params.hasExport() {
+		if params.Has("--export") {
 			folderExported := generateSpaces("Folder exported: " + nameDirDiffs)
 			empty.Println(resultPrint(folderExported))
 		}
@@ -341,7 +428,7 @@ func (p *Params) CompareBetweenTwoFiles(b1, b2 []byte, file, fileToCompare strin
 		result := bytes.Compare(b1, b2)
 		if result != 0 {
 			registerDiffer(file)
-			if params.hasExport() {
+			if params.Has("--export") {
 				go params.GenerateDiffFiles(fileToCompare, file)
 			}
 		}
