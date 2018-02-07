@@ -12,6 +12,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -37,6 +39,11 @@ var (
 	filesDontExists []string
 	filesDiffers    []string
 	IgnoreFolders   []string
+	params          = new(Params)
+)
+
+const (
+	nameDirDiffs = "diffs"
 )
 
 type Winsize struct {
@@ -46,9 +53,43 @@ type Winsize struct {
 	Ypixel uint16
 }
 
+type Params struct {
+	options []string
+}
+
+func (p *Params) Set(params []string) {
+	for i := range params {
+		p.options = append(p.options, params[i])
+	}
+}
+
+func (p *Params) GetAll() []string {
+	return p.options
+}
+
+func (p *Params) Get(name int) string {
+	return p.options[name]
+}
+
+func (p *Params) Count() int {
+	return len(p.options)
+}
+
+func (p *Params) hasExport() bool {
+	for i := range p.options {
+		if p.options[i] == "--export" {
+			return true
+		}
+	}
+	return false
+}
+
 func main() {
 
-	// get size of window
+	// Set arguments passed to ckp
+	params.Set(os.Args)
+
+	// Get size of terminal window where the ckp is running.
 	winsize = getWidth()
 
 	scanningColor := gocolorize.NewColor("green+h:black")
@@ -65,15 +106,20 @@ func main() {
 	result = log.New(os.Stdout, resultPrint("Result    -->  "), 0)
 	empty = log.New(os.Stdout, resultPrint("               "), 0)
 
+	// using this only for analysis of the dependencies of
+	// the programs PHP at the moment
 	if len(os.Args) == 3 {
 		if os.Args[1] == "--check-dependencies" && os.Args[2] != "" {
 			path = os.Args[2]
 			// initiate read directories
-			readDir(os.Args[2], false)
-			resultDisplay()
+			readDir(os.Args[2], false, "php")
+			params.ResultDisplay()
 		}
 	}
 
+	// This session initialize diff analysis and your options
+	// --ignore Ignore folders who which are not part of the process
+	// --export Export the data obtained from the diffs
 	if len(os.Args) >= 4 {
 		if os.Args[1] == "--diff" && os.Args[2] != "" && os.Args[3] != "" {
 			path = os.Args[2]
@@ -86,6 +132,18 @@ func main() {
 						IgnoreFolders = append(IgnoreFolders, removeSpace)
 					}
 				}
+				if len(os.Args) == 7 {
+					if os.Args[6] == "--export" {
+						pwd, err := os.Getwd()
+						if err != nil {
+							panic(err)
+						}
+						err = os.MkdirAll(pwd+"/"+nameDirDiffs, 0755)
+						if err != nil {
+							panic(err)
+						}
+					}
+				}
 			}
 			// initiate read directories
 			pwd, err := os.Getwd()
@@ -94,12 +152,12 @@ func main() {
 			}
 			path := pwd + "/" + os.Args[2]
 			readRecursiveDir(path, os.Args[2], os.Args[3])
-			resultDisplay()
+			params.ResultDisplay()
 		}
 	}
 }
 
-func resultDisplay() {
+func (p *Params) ResultDisplay() {
 	// scan result
 	for j := 0; j < 2; j++ {
 		line := generateSpaces(" ")
@@ -112,6 +170,10 @@ func resultDisplay() {
 
 	if len(filesDiffers) != 0 {
 		writeLog("differ_logs.txt", filesDiffers)
+		if params.hasExport() {
+			folderExported := generateSpaces("Folder exported: " + nameDirDiffs)
+			empty.Println(resultPrint(folderExported))
+		}
 	}
 
 	brokenDependencies := generateSpaces("Broken dependencies: " + strconv.Itoa(len(logger)))
@@ -154,25 +216,25 @@ func writeLog(fileToWrite string, data []string) error {
 	return err
 }
 
-func readDir(directory string, signal bool) {
+func readDir(directory string, signal bool, extension string) {
 	files, err := ioutil.ReadDir(directory)
 	if err != nil {
 		panic(err)
 	}
 	for _, file := range files {
 		// check for files with extension .php
-		if strings.Contains(file.Name(), ".php") {
+		if strings.Contains(file.Name(), "."+extension) {
 			filename := file.Name()
 			if signal {
 				filename = directory + "/" + file.Name()
 			}
-			readFile(filename, "null", signal)
+			readFileDependencie(filename, "null", signal)
 		} else if file.IsDir() {
 			if len(dir) == 0 {
 				dir = append(dir, directory+"/"+file.Name())
 			}
 			registerDir(directory + "/" + file.Name())
-			readDir(directory+"/"+file.Name(), true)
+			readDir(directory+"/"+file.Name(), true, extension)
 		}
 	}
 	return
@@ -196,14 +258,13 @@ func readRecursiveDir(directory, dirComFirst, dirComSecond string) {
 			continue
 		}
 		// if is not a folder put on into  -> openFiles -> compareBetweenTwoFiles
-		compareBetweenTwoFiles(openTwoFiles(fileOrDirName, dirComFirst, dirComSecond))
+		params.CompareBetweenTwoFiles(openTwoFiles(fileOrDirName, dirComFirst, dirComSecond))
 	}
 }
 
-func openTwoFiles(file, dirComFirst, dirComSecond string) ([]byte, []byte, string) {
+func openTwoFiles(file, dirComFirst, dirComSecond string) ([]byte, []byte, string, string) {
 	// Register file for doesn't scan again
 	checkScann := registerFile(file)
-	//fmt.Println(file)
 	if !checkScann {
 
 		fileToCompare := strings.Replace(file, dirComFirst, dirComSecond, -1)
@@ -219,7 +280,7 @@ func openTwoFiles(file, dirComFirst, dirComSecond string) ([]byte, []byte, strin
 		if err != nil {
 			if os.IsNotExist(err) {
 				register(fileToCompare, filesDontExists)
-				return []byte{}, []byte{}, ""
+				return []byte{}, []byte{}, "", ""
 			}
 		}
 
@@ -232,16 +293,57 @@ func openTwoFiles(file, dirComFirst, dirComSecond string) ([]byte, []byte, strin
 		newtext := generateSpaces(" " + file)
 		scanning.Println(scanningPrint(newtext))
 
-		return dt1, dt2, file
+		return dt1, dt2, fileToCompare, file
 	}
-	return []byte{}, []byte{}, ""
+	return []byte{}, []byte{}, "", ""
 }
 
-func compareBetweenTwoFiles(b1, b2 []byte, text string) {
-	if text != "" {
+// execShell("sh", []string{"-c", cmd})
+func execShell(command string, args []string) {
+	cmd := exec.Command(command, args...)
+	var waitStatus syscall.WaitStatus
+	if err := cmd.Run(); err != nil {
+		if err != nil {
+			os.Stderr.WriteString(fmt.Sprintf("Error: %s\n", err.Error()))
+		}
+		if exitError, ok := err.(*exec.ExitError); ok {
+			waitStatus = exitError.Sys().(syscall.WaitStatus)
+			fmt.Printf("Output: %s\n", []byte(fmt.Sprintf("%d", waitStatus.ExitStatus())))
+		}
+	} else {
+		// Success
+		waitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus)
+		fmt.Printf("Output: %s\n", []byte(fmt.Sprintf("%d", waitStatus.ExitStatus())))
+	}
+}
+
+func (p *Params) GenerateDiffFiles(b1, b2 string) {
+	nameFile := strings.Replace(b1, "/", "_", -1)
+	newName := nameFile + ".diff"
+	cmd := "diff " + b1 + " " + b2
+
+	output, err := exec.Command("sh", "-c", cmd).CombinedOutput()
+	openFile, err := os.OpenFile(filepath.Join(nameDirDiffs, newName), os.O_CREATE|os.O_RDWR, 0755)
+	if err != nil {
+		panic(err)
+	}
+	defer openFile.Close()
+	w := bufio.NewWriter(openFile)
+	_, err = w.WriteString(string(output))
+	if err != nil {
+		panic(err)
+	}
+	w.Flush()
+}
+
+func (p *Params) CompareBetweenTwoFiles(b1, b2 []byte, file, fileToCompare string) {
+	if file != "" {
 		result := bytes.Compare(b1, b2)
 		if result != 0 {
-			registerDiffer(text)
+			registerDiffer(file)
+			if params.hasExport() {
+				go params.GenerateDiffFiles(fileToCompare, file)
+			}
 		}
 	}
 }
@@ -282,7 +384,7 @@ func generateLog(dependencia, fileorigem string) {
 	logger = registerLog(text, logger)
 }
 
-func readFile(file, anterior string, signal bool) {
+func readFileDependencie(file, anterior string, signal bool) {
 	pathFile := path + "/" + file
 
 	if signal {
@@ -317,7 +419,7 @@ func readFile(file, anterior string, signal bool) {
 						found.Println(foundPrint(newtext))
 						if strings.Contains(split[1], ".php") {
 							// only files *.php
-							readFile(split[1], pathFile, false)
+							readFileDependencie(split[1], pathFile, false)
 						}
 					}
 				}
@@ -328,7 +430,7 @@ func readFile(file, anterior string, signal bool) {
 						newtext = generateSpaces(" [ include ] found: " + split[1] + " in file -> " + pathFile)
 						found.Println(foundPrint(newtext))
 						if strings.Contains(split[1], ".php") {
-							readFile(split[1], pathFile, false)
+							readFileDependencie(split[1], pathFile, false)
 						}
 					}
 				}
