@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## v0.0.8
+
+_Release: 2018-02-08_
+
+- Removed condition of count the number of params
+   - Only work when the param is passed, ignore the total
+     of parameters passed
+- Removed function register() and improved the docs
+- Fixed the error on the title of docker
+- Changed the instruction and improved the README
+- Using gofmt for format the code
+- Create rules and validations for some parameters
+   - Rules for --check-dependencies and --ignore
+   - The program only beginning when the parameters passed:
+     is not empty, the name/path of the folder is valid, if the
+     parameters passed has the options: --check-dependencies or --ignore
+- Fixed name of LICENSE
+- Changed option --check to --check-dependencies
+- Implementing new feature --diff
+   - Option --diff receive three parameters
+     target1 target2 and one option --ignore, that's possible
+     ignore some folder
+   - Changed the log report, generated the log file with the affected
+   - Changed the function display to receive more fields.
+- Ignore txt files
+- Created readRecursiveDir function
+   - Created function "readRecursiveDir()"
+     This function analyzes the entire folder of the set of
+     the parameters and returns execute scan recursively
+- Changed package name and descriptions.
+- Changed description of the project
+- Ignored binary files.
+- Changed the name of package for ckp
+- Changed the build directory
+- Generated two binary files, darwin and linux
+- Change directory of main file and README name package
+
+
 ## v0.0.7
 
 _Release: 2017-12-02_
