@@ -139,11 +139,25 @@ func main() {
 
 	// using this only for analysis of the dependencies of
 	// the programs PHP at the moment
-	if len(os.Args) == 3 {
-		if os.Args[1] == "--check-dependencies" && os.Args[2] != "" {
-			path = os.Args[2]
+	if params.Count() >= 2 {
+		if params.Has("--check-dependencies") {
+			dirDependencies := params.Position(params.IndexOf("--check-dependencies") + 1)
+			if dirDependencies == "" {
+				puts("Not found folders for analysis!")
+				puts("Usage:")
+				puts("    Help: ckp --help")
+				os.Exit(2)
+			}
+			path = params.Position(params.IndexOf("--check-dependencies") + 1)
+
+			if !params.IsFolderExists(path) {
+				puts("Not found folders for analysis!")
+				puts("Usage:")
+				puts("    Help: ckp --help")
+				os.Exit(2)
+			}
 			// initiate read directories
-			readDir(os.Args[2], false, "php")
+			readDir(path, false, "php")
 			params.ResultDisplay()
 		}
 	}
@@ -172,8 +186,22 @@ func main() {
 				os.Exit(2)
 			}
 			if len(os.Args) >= 6 {
-				if os.Args[4] == "--ignore" && os.Args[5] != "" {
-					split := strings.Split(os.Args[5], ",")
+				if params.Has("--ignore") {
+
+					ignore := params.Position(params.IndexOf("--ignore") + 1)
+					if ignore == "" {
+						puts("Not found parameters from --ignore!")
+						puts("Usage:")
+						puts("    Help: ckp --help")
+						os.Exit(2)
+					}
+					if strings.Contains(ignore, "--") {
+							puts("Be careful, this may not work.")
+							puts("--ignore ", ignore)
+							puts("Usage:")
+							puts("    Help: ckp --help")
+					}
+					split := strings.Split(ignore, ",")
 					for i := range split {
 						removeSpace := strings.Trim(split[i], " ")
 						IgnoreFolders = append(IgnoreFolders, removeSpace)
