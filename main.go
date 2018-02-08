@@ -196,10 +196,10 @@ func main() {
 						os.Exit(2)
 					}
 					if strings.Contains(ignore, "--") {
-							puts("Be careful, this may not work.")
-							puts("--ignore ", ignore)
-							puts("Usage:")
-							puts("    Help: ckp --help")
+						puts("Be careful, this may not work.")
+						puts("--ignore ", ignore)
+						puts("Usage:")
+						puts("    Help: ckp --help")
 					}
 					split := strings.Split(ignore, ",")
 					for i := range split {
