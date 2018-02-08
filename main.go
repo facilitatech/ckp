@@ -21,24 +21,24 @@ import (
 )
 
 var (
-	scanning        *log.Logger
-	found           *log.Logger
-	notFound        *log.Logger
-	result          *log.Logger
-	empty           *log.Logger
-	path            string
-	scanningPrint   func(v ...interface{}) string
-	foundPrint      func(v ...interface{}) string
-	notFoundPrint   func(v ...interface{}) string
-	resultPrint     func(v ...interface{}) string
-	winsize         int
-	logger          []string
-	dir             []string
-	files           []string
-	filesDiffers    []string
-	ignoreFolders   []string
-	params          = new(Params)
-	puts            = fmt.Println
+	scanning      *log.Logger
+	found         *log.Logger
+	notFound      *log.Logger
+	result        *log.Logger
+	empty         *log.Logger
+	path          string
+	scanningPrint func(v ...interface{}) string
+	foundPrint    func(v ...interface{}) string
+	notFoundPrint func(v ...interface{}) string
+	resultPrint   func(v ...interface{}) string
+	winsize       int
+	logger        []string
+	dir           []string
+	files         []string
+	filesDiffers  []string
+	ignoreFolders []string
+	params        = new(Params)
+	puts          = fmt.Println
 )
 
 const (
@@ -195,30 +195,27 @@ func main() {
 				puts("    Help: ckp --help")
 				os.Exit(2)
 			}
-			if len(os.Args) >= 6 {
-				if params.Has("--ignore") {
-
-					ignore := params.Position(params.IndexOf("--ignore") + 1)
-					if ignore == "" {
-						puts("Not found parameters from --ignore!")
-						puts("Usage:")
-						puts("    Help: ckp --help")
-						os.Exit(2)
-					}
-					if strings.Contains(ignore, "--") {
-						puts("Be careful, this may not work.")
-						puts("--ignore ", ignore)
-						puts("Usage:")
-						puts("    Help: ckp --help")
-					}
-					split := strings.Split(ignore, ",")
-					for i := range split {
-						removeSpace := strings.Trim(split[i], " ")
-						ignoreFolders = append(ignoreFolders, removeSpace)
-					}
+			if params.Has("--ignore") {
+				ignore := params.Position(params.IndexOf("--ignore") + 1)
+				if ignore == "" {
+					puts("Not found parameters from --ignore!")
+					puts("Usage:")
+					puts("    Help: ckp --help")
+					os.Exit(2)
+				}
+				if strings.Contains(ignore, "--") {
+					puts("Be careful, this may not work.")
+					puts("--ignore ", ignore)
+					puts("Usage:")
+					puts("    Help: ckp --help")
+				}
+				split := strings.Split(ignore, ",")
+				for i := range split {
+					removeSpace := strings.Trim(split[i], " ")
+					ignoreFolders = append(ignoreFolders, removeSpace)
 				}
 			}
-			if params.Has("--export") && params.Count() >= 5 {
+			if params.Has("--export") {
 				pwd, err := os.Getwd()
 				if err != nil {
 					panic(err)
