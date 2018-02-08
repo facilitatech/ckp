@@ -238,7 +238,7 @@ func (p *Params) PrintHelp() {
 		puts("COPYRIGHT")
 		puts("      Copyright (c) 2017 Facilita.tech Author.")
 		puts("      BSD ")
-		puts("      See the LICENCE: <https://github.com/facilitatech/ckp/blob/master/LICENSE>")
+		puts("      See the LICENSE: <https://github.com/facilitatech/ckp/blob/master/LICENSE>")
 		puts(" ")
 		os.Exit(2)
 	}
