@@ -40,6 +40,7 @@ git clone https://github.com/facilitatech/ckp
 ```
 
 **Execute the file init.sh for up the docker containers**
+
 The first step executes the option 3, again execute the file with the option 1 when the option 3 is finished!
 ```bash
 https://github.com/facilitatech/ckp for the canonical source repository
