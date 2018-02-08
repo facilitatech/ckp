@@ -35,10 +35,8 @@ var (
 	logger          []string
 	dir             []string
 	files           []string
-	filesExists     []string
-	filesDontExists []string
 	filesDiffers    []string
-	IgnoreFolders   []string
+	ignoreFolders   []string
 	params          = new(Params)
 	puts            = fmt.Println
 )
@@ -47,6 +45,8 @@ const (
 	nameDirDiffs = "diffs"
 )
 
+// Winsize have the sizes of the window terminal
+// this is used for configure the printed colors
 type Winsize struct {
 	Row    uint16
 	Col    uint16
@@ -54,12 +54,15 @@ type Winsize struct {
 	Ypixel uint16
 }
 
+// Params used for manager the parameters who a
+// user has passed to the program
 type Params struct {
 	options  []string
 	indexof  map[string]int
 	position map[int]string
 }
 
+// Set is the setter function for parameters
 func (p *Params) Set(params []string) {
 	if len(params) > 1 {
 
@@ -74,26 +77,32 @@ func (p *Params) Set(params []string) {
 	}
 }
 
+// GetAll return all parameters passed to the program
 func (p *Params) GetAll() []string {
 	return p.options
 }
 
+// Get return one specific parameter per position in the slice
 func (p *Params) Get(name int) string {
 	return p.options[name]
 }
 
+// Count return the total of parameters passed to program
 func (p *Params) Count() int {
 	return len(p.options)
 }
 
+// IndexOf return the index of the parameter in the map per name
 func (p *Params) IndexOf(name string) int {
 	return p.indexof[name]
 }
 
+// Position return the name of the parameter in the map per index
 func (p *Params) Position(index int) string {
 	return p.position[index]
 }
 
+// Has check if the parameter exists in the map passed to program
 func (p *Params) Has(option string) bool {
 	for i := range p.options {
 		if p.options[i] == option {
@@ -103,6 +112,7 @@ func (p *Params) Has(option string) bool {
 	return false
 }
 
+// IsFolderExists return bool true if the folder exists and false if not
 func (p *Params) IsFolderExists(dir string) bool {
 	_, err := os.Stat(dir)
 	if err != nil {
@@ -204,7 +214,7 @@ func main() {
 					split := strings.Split(ignore, ",")
 					for i := range split {
 						removeSpace := strings.Trim(split[i], " ")
-						IgnoreFolders = append(IgnoreFolders, removeSpace)
+						ignoreFolders = append(ignoreFolders, removeSpace)
 					}
 				}
 			}
@@ -230,6 +240,7 @@ func main() {
 	}
 }
 
+// PrintHelp this are the instructions for the users
 func (p *Params) PrintHelp() {
 	if p.Has("--help") {
 		c := exec.Command("clear")
@@ -272,6 +283,7 @@ func (p *Params) PrintHelp() {
 	}
 }
 
+// ResultDisplay print the information collected when finished the process
 func (p *Params) ResultDisplay() {
 	// scan result
 	for j := 0; j < 2; j++ {
@@ -363,8 +375,8 @@ func readRecursiveDir(directory, dirComFirst, dirComSecond string) {
 	for _, file := range files {
 		fileOrDirName := directory + "/" + file.Name()
 		if file.IsDir() {
-			// Check if file aren't in the []IgnoreFolders
-			ignore, _ := inArray(file.Name(), IgnoreFolders)
+			// Check if file aren't in the []ignoreFolders
+			ignore, _ := inArray(file.Name(), ignoreFolders)
 			if !ignore {
 				registerDir(fileOrDirName)
 				readRecursiveDir(fileOrDirName, dirComFirst, dirComSecond)
@@ -394,13 +406,9 @@ func openTwoFiles(file, dirComFirst, dirComSecond string) ([]byte, []byte, strin
 		_, err = os.Stat(fileToCompare)
 		if err != nil {
 			if os.IsNotExist(err) {
-				register(fileToCompare, filesDontExists)
 				return []byte{}, []byte{}, "", ""
 			}
 		}
-
-		register(fileToCompare, filesExists)
-
 		dt2, err := ioutil.ReadFile(fileToCompare)
 		if err != nil {
 			log.Fatal(err)
@@ -432,6 +440,7 @@ func execShell(command string, args []string) {
 	}
 }
 
+// GenerateDiffFiles generate diffs files into the file system on the folder "diffs"
 func (p *Params) GenerateDiffFiles(b1, b2 string) {
 	nameFile := strings.Replace(b1, "/", "_", -1)
 	newName := nameFile + ".diff"
@@ -451,6 +460,7 @@ func (p *Params) GenerateDiffFiles(b1, b2 string) {
 	w.Flush()
 }
 
+// CompareBetweenTwoFiles compare two files when the option --export is passed to program
 func (p *Params) CompareBetweenTwoFiles(b1, b2 []byte, file, fileToCompare string) {
 	if file != "" {
 		result := bytes.Compare(b1, b2)
@@ -572,14 +582,6 @@ func registerDiffer(name string) bool {
 	exists, _ := inArray(name, filesDiffers)
 	if !exists {
 		filesDiffers = append(filesDiffers, name)
-	}
-	return exists
-}
-
-func register(name string, fileRegister []string) bool {
-	exists, _ := inArray(name, fileRegister)
-	if !exists {
-		fileRegister = append(fileRegister, name)
 	}
 	return exists
 }
