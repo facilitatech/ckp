@@ -464,7 +464,7 @@ func (p *Params) CompareBetweenTwoFiles(b1, b2 []byte, file, fileToCompare strin
 		if result != 0 {
 			registerDiffer(file)
 			if params.Has("--export") {
-				go params.GenerateDiffFiles(fileToCompare, file)
+				params.GenerateDiffFiles(fileToCompare, file)
 			}
 		}
 	}
