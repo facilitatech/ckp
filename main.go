@@ -150,90 +150,140 @@ func main() {
 	// using this only for analysis of the dependencies of
 	// the programs PHP at the moment
 	if params.Count() >= 2 {
-		if params.Has("--check-dependencies") {
-			dirDependencies := params.Position(params.IndexOf("--check-dependencies") + 1)
-			if dirDependencies == "" {
-				puts("Not found folders for analysis!")
-				puts("Usage:")
-				puts("    Help: ckp --help")
-				os.Exit(2)
-			}
-			path = params.Position(params.IndexOf("--check-dependencies") + 1)
-
-			if !params.IsFolderExists(path) {
-				puts("Not found folders for analysis!")
-				puts("Usage:")
-				puts("    Help: ckp --help")
-				os.Exit(2)
-			}
-			// initiate read directories
-			readDir(path, false, "php")
-			params.ResultDisplay()
-		}
+		params.CheckDependencies()
 	}
 
 	// This session initialize diff analysis and your options
 	// --ignore Ignore folders who which are not part of the process
 	// --export Export the data obtained from the diffs
 	if params.Count() >= 4 {
-		if params.Has("--diff") {
+		params.Diff()
+	}
+}
 
-			positionDiff := params.IndexOf("--diff") + 1
-			if (params.Count() - positionDiff) < 2 {
-				puts("Not found folders for analysis!")
-				puts("Usage:")
-				puts("    Help: ckp --help")
-				os.Exit(2)
-			}
-
-			path1 := params.Position(params.IndexOf("--diff") + 1)
-			path2 := params.Position(params.IndexOf("--diff") + 2)
-
-			if !params.IsFolderExists(path1) || !params.IsFolderExists(path2) {
-				puts("Not found folders for analysis!")
-				puts("Usage:")
-				puts("    Help: ckp --help")
-				os.Exit(2)
-			}
-			if params.Has("--ignore") {
-				ignore := params.Position(params.IndexOf("--ignore") + 1)
-				if ignore == "" {
-					puts("Not found parameters from --ignore!")
-					puts("Usage:")
-					puts("    Help: ckp --help")
-					os.Exit(2)
-				}
-				if strings.Contains(ignore, "--") {
-					puts("Be careful, this may not work.")
-					puts("--ignore ", ignore)
-					puts("Usage:")
-					puts("    Help: ckp --help")
-				}
-				split := strings.Split(ignore, ",")
-				for i := range split {
-					removeSpace := strings.Trim(split[i], " ")
-					ignoreFolders = append(ignoreFolders, removeSpace)
-				}
-			}
-			if params.Has("--export") {
-				pwd, err := os.Getwd()
-				if err != nil {
-					panic(err)
-				}
-				err = os.MkdirAll(pwd+"/"+nameDirDiffs, 0755)
-				if err != nil {
-					panic(err)
-				}
-			}
-			// initiate read directories
-			pwd, err := os.Getwd()
-			if err != nil {
-				panic(err)
-			}
-			path := pwd + "/" + path1
-			readRecursiveDir(path, path1, path2)
-			params.ResultDisplay()
+func (p *Params) CheckDependencies() {
+	if p.Has("--check-dependencies") {
+		dirDependencies := p.Position(p.IndexOf("--check-dependencies") + 1)
+		if dirDependencies == "" {
+			puts("Not found folders for analysis!")
+			puts("Usage:")
+			puts("    Help: ckp --help")
+			os.Exit(2)
 		}
+		path = p.Position(p.IndexOf("--check-dependencies") + 1)
+
+		if !p.IsFolderExists(path) {
+			puts("Not found folders for analysis!")
+			puts("Usage:")
+			puts("    Help: ckp --help")
+			os.Exit(2)
+		}
+		// initiate read directories
+		readDir(path, false, "php")
+		p.ResultDisplay()
+	}
+}
+
+func (p *Params) Export() {
+	if p.Has("--export") {
+		pwd, err := os.Getwd()
+		if err != nil {
+			panic(err)
+		}
+		err = os.MkdirAll(pwd+"/"+nameDirDiffs, 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (p *Params) Diff() {
+	if p.Has("--diff") {
+
+		positionDiff := p.IndexOf("--diff") + 1
+		if (p.Count() - positionDiff) < 2 {
+			puts("Not found folders for analysis!")
+			puts("Usage:")
+			puts("    Help: ckp --help")
+			os.Exit(2)
+		}
+
+		path1 := p.Position(p.IndexOf("--diff") + 1)
+		path2 := p.Position(p.IndexOf("--diff") + 2)
+
+		if !p.IsFolderExists(path1) || !p.IsFolderExists(path2) {
+			puts("Not found folders for analysis!")
+			puts("Usage:")
+			puts("    Help: ckp --help")
+			os.Exit(2)
+		}
+		if p.Has("--ignore") {
+			ignore := p.Position(p.IndexOf("--ignore") + 1)
+			if ignore == "" {
+				puts("Not found parameters from --ignore!")
+				puts("Usage:")
+				puts("    Help: ckp --help")
+				os.Exit(2)
+			}
+			if strings.Contains(ignore, "--") {
+				puts("Be careful, this may not work.")
+				puts("--ignore ", ignore)
+				puts("Usage:")
+				puts("    Help: ckp --help")
+			}
+			split := strings.Split(ignore, ",")
+			for i := range split {
+				removeSpace := strings.Trim(split[i], " ")
+				ignoreFolders = append(ignoreFolders, removeSpace)
+			}
+		}
+
+		// initiate read directories
+		pwd, err := os.Getwd()
+		if err != nil {
+			panic(err)
+		}
+		path := pwd + "/" + path1
+
+		p.Export()
+		p.FilterFile(path, path1, path2)
+
+		readRecursiveDir(path, path1, path2)
+		p.ResultDisplay()
+	}
+}
+
+func (p *Params) FilterFile(directory, dirComFirst, dirComSecond string) {
+	if p.Has("--filter-file") {
+		filter := p.Position(p.IndexOf("--filter-file") + 1)
+		if filter == "" {
+			puts("Not found parameters from --filter-file!")
+			puts("Usage:")
+			puts("    Help: ckp --help")
+			os.Exit(2)
+		}
+		p.readListFiles(directory, dirComFirst, dirComSecond)
+
+		p.ResultDisplay()
+		os.Exit(2)
+	}
+}
+
+func (p *Params) readListFiles(directory, dirComFirst, dirComSecond string) {
+	filterFile := p.Position(p.IndexOf("--filter-file") + 1)
+	file, err := os.Open(filterFile)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	fs := bufio.NewScanner(file)
+	for fs.Scan() {
+		params.CompareBetweenTwoFiles(openTwoFiles(directory + "/" + fs.Text(), dirComFirst, dirComSecond))
+	}
+
+	if err := fs.Err(); err != nil {
+		panic(err)
 	}
 }
 
@@ -258,6 +308,9 @@ func (p *Params) PrintHelp() {
 		puts(" ")
 		puts("      --diff /var/www/app1 /var/www/app2")
 		puts("      		Make diff between two folders recursively")
+		puts(" ")
+		puts("      --filter-file folder/file.txt")
+		puts("      		Filter files per list, this only work with --diff")
 		puts(" ")
 		puts("      --ignore vendor,.git,images,css,js")
 		puts("      		Ignore folders, this only work with --diff")
