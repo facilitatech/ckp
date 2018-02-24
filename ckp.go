@@ -21,12 +21,12 @@ import (
 )
 
 var (
-	scanning      *log.Logger
-	found         *log.Logger
-	notFound      *log.Logger
-	result        *log.Logger
-	empty         *log.Logger
-	info          *log.Logger
+	scanning *log.Logger
+	found    *log.Logger
+	notFound *log.Logger
+	result   *log.Logger
+	empty    *log.Logger
+	info     *log.Logger
 
 	scanningPrint func(v ...interface{}) string
 	foundPrint    func(v ...interface{}) string
@@ -34,7 +34,7 @@ var (
 	resultPrint   func(v ...interface{}) string
 	infoPrint     func(v ...interface{}) string
 
-	winsize       int
+	winsize int
 
 	brokenDependencyLogger,
 	dependencyLogger,
@@ -45,8 +45,8 @@ var (
 	filesDiffers,
 	ignoreFolders []string
 
-	params        = new(Params)
-	puts          = fmt.Println
+	params = new(Params)
+	puts   = fmt.Println
 )
 
 const (
@@ -102,7 +102,7 @@ func main() {
 	found = log.New(os.Stdout, foundPrint("FOUND          "), 0)
 	notFound = log.New(os.Stdout, notFoundPrint("NOT FOUND      "), 0)
 	result = log.New(os.Stdout, resultPrint("RESULT    -->  "), 0)
-	info  = log.New(os.Stdout, infoPrint("INFO      -->  "), 0)
+	info = log.New(os.Stdout, infoPrint("INFO      -->  "), 0)
 	empty = log.New(os.Stdout, resultPrint("               "), 0)
 
 	// using this only for analysis of the dependencies of
@@ -551,7 +551,7 @@ func (p *Params) ReadListFilesCheck(directory, dirComFirst string) {
 
 	fs := bufio.NewScanner(file)
 	for fs.Scan() {
-		p.ReadFileDependencieCheck(fs.Text(), directory, dirComFirst,"", false)
+		p.ReadFileDependencieCheck(fs.Text(), directory, dirComFirst, "", false)
 	}
 
 	if err := fs.Err(); err != nil {
@@ -634,7 +634,7 @@ func (p *Params) ReadListFiles(directory, dirComFirst, dirComSecond string) {
 
 	fs := bufio.NewScanner(file)
 	for fs.Scan() {
-		p.CompareBetweenTwoFiles(p.OpenTwoFiles(directory + "/" + fs.Text(), dirComFirst, dirComSecond))
+		p.CompareBetweenTwoFiles(p.OpenTwoFiles(directory+"/"+fs.Text(), dirComFirst, dirComSecond))
 	}
 
 	if err := fs.Err(); err != nil {
