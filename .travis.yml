@@ -6,4 +6,5 @@ go:
   - master
 
 install:
+  - go get github.com/agtorre/gocolorize
   - make
