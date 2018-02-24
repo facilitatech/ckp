@@ -752,6 +752,7 @@ func (p *Params) ScanFile(file string) []string {
 	if err != nil {
 		panic(err)
 	}
+	defer nFile.Close()
 	var tx []string
 
 	scanner := bufio.NewScanner(nFile)
