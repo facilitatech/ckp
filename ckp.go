@@ -190,7 +190,10 @@ func (p *Params) SetFilesParams(param string) (rdata []string) {
 
 		file, err := os.Open(list)
 		if err != nil {
-			panic(err)
+			puts("No such file or directory: " + list)
+			puts("Usage:")
+			puts("    Help: ckp --help")
+			os.Exit(2)
 		}
 		defer file.Close()
 
