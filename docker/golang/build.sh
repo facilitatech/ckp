@@ -2,6 +2,12 @@
 set -e
 echo "[build.sh:building binary]"
 
+# darwin86_64
+cd $BUILDPATH && \
+   GOOS=darwin GOARCH=amd64 go build -o ckp && \
+   mv ./ckp ./bin/ && \
+   rm -rf /tmp/*
+
 # linux86_64
 cd $BUILDPATH && \
    GOOS=linux GOARCH=amd64 go build -o ckp && \
