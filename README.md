@@ -1,36 +1,50 @@
 # ckp - Check PHP files
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/facilitatech/ckp)](https://goreportcard.com/report/github.com/facilitatech/ckp)
+[![Go Report Card](https://goreportcard.com/badge/github.com/facilitatech/ckp)](https://goreportcard.com/report/github.com/facilitatech/ckp) &nbsp;&nbsp; [![Build Status](https://travis-ci.org/facilitatech/ckp.svg?branch=master)](https://travis-ci.org/facilitatech/ckp)
 
 ### Install
 ```bash
 go get github.com/facilitatech/ckp
 ```
 
+### Options
+
+```bash
+--broken-deps    Check all broken dependencies of your project PHP has
+
+--diff           Make diff between two folders recursively
+
+--check          Check dependencies with two folders recursively
+
+--filter-file    Filter files per list, work with --diff and --check
+
+--ignore         Ignore folders
+
+--export         Export diffs file into folder, this only work with --diff
+
+--verbose        Print result
+
+--dep-map        Dependency map, this only work with --check
+
+--excluded-file  Ignore this files on the dependencies check, this only work with --check
+```
+
 ### Examples
-**Check all broken dependencies of your project PHP has**
-```bash
-ckp --check-dependencies yourproject
-```
-
-**Make diff between two folders recursively**
-```bash
-ckp --diff /var/www/app1 /var/www/app2
-```
-
-**Ignore folders, this only work with `--diff`**
-```bash
-ckp --diff /var/www/app1 /var/www/app2 --ignore vendor,.git,images,css,js
-```
-
-**Export diffs file into folder, this only work with `--diff`**
-```bash
-ckp --diff /var/www/app1 /var/www/app2 --export
-```
 
 ```bash
-ckp --diff /var/www/app1 /var/www/app2 --ignore vendor,.git,images,css,js --export
+ckp --broken-deps /var/www/app --verbose
+
+ckp --diff /var/www/app1 /var/www/app2 --verbose
+ckp --diff /var/www/app1 /var/www/app2 --ignore vendor,bin --verbose
+ckp --diff /var/www/app1 /var/www/app2 --ignore vendor --filter-file files.txt --verbose
+ckp --diff /var/www/app1 /var/www/app2 --ignore vendor --filter-file files.txt --export --verbose
+
+ckp --check /var/www/app --verbose
+ckp --check /var/www/app --filter-file files.txt --verbose
+ckp --check /var/www/app --filter-file files.txt --dep-map --verbose
+ckp --check /var/www/app --filter-file files.txt --dep-map --excluded-file ignore-files.txt --verbose
 ```
+
 
 ### Development with docker
 Clone the repository in folder do you prefer
