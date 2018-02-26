@@ -300,7 +300,7 @@ func (p *Params) BrokenDeps() {
 	}
 }
 
-// Diff, make "diff" between two folders recursively
+// Diff make "diff" between two folders recursively
 func (p *Params) Diff() {
 	if p.Has("--diff") {
 		positionDiff := p.GetIndexOf("--diff") + 1
@@ -395,7 +395,7 @@ func (p *Params) Check() {
 	}
 }
 
-// MapDeps, initializes a deep analysis of the dependencies
+// MapDeps initializes a deep analysis of the dependencies
 // in all target files identifying where the dependencies are being
 // used in other system routines or files.
 func (p *Params) MapDeps(path, pathFQDN string) {
@@ -426,7 +426,7 @@ func (p *Params) FilterFile(directory, dirComFirst, dirComSecond string) {
 	}
 }
 
-// Export() generates the directory where it will be exported
+// Export generates the directory where it will be exported
 // the log files when you use this parameter --export
 func (p *Params) Export(name string) {
 	if p.Has("--export") {
@@ -700,7 +700,7 @@ func (p *Params) ReadDir(directory string, signal bool, extension string) {
 	return
 }
 
-// readRecursiveDir makes a recursive read of a directory, used by the parameters --diff and
+// ReadRecursiveDir makes a recursive read of a directory, used by the parameters --diff and
 // --dep-map, the parameter --diff passes to the function "OpenTwoFiles" -> CompareBetweenTwoFiles
 // to make the difference of the files, the parameter --dep-map it reads file by file and returns
 // all data in a slice and passes it to the "SearchOnScanned" function to search the data.
