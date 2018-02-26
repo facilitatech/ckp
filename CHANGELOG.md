@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## v0.0.9
+
+_Release: 2018-02-25_
+
+- Fixed bug on SetFilesParams.
+- Included new install command to travis.
+- Generated build to darwin too.
+- Fixed bug -> Many Open Files
+- Changed build.sh to work with binary to linux.
+- Change name of main.go to ckp.go.
+- Included new feature --filter-file
+
 ## v0.0.8
 
 _Release: 2018-02-08_
