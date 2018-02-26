@@ -139,12 +139,12 @@ func (p *Params) Count() int {
 	return len(p.Options)
 }
 
-// IndexOf return the index of the parameter in the map per name
+// GetIndexOf return the index of the parameter in the map per name
 func (p *Params) GetIndexOf(name string) int {
 	return p.IndexOf[name]
 }
 
-// Position return the name of the parameter in the map per index
+// GetPosition return the name of the parameter in the map per index
 func (p *Params) GetPosition(index int) string {
 	return p.Position[index]
 }
@@ -174,9 +174,9 @@ func (p *Params) Set(params []string) {
 	}
 }
 
-// SetFilesParams faz a leitura do arquivo passado como parâmetro
-// --filter-file, --excluded-file ou qualquer outro parâmetro
-// que passe uma lista de arquivos.
+// SetFilesParams reads the file passed as a parameter
+// --filter-file, --excluded-file, or any other parameter
+// that passes a list of files.
 // usage: params.SetFilesParams("--filter-file")
 func (p *Params) SetFilesParams(param string) (rdata []string) {
 	if p.Has(param) {
@@ -276,7 +276,7 @@ func (p *Params) Help() {
 	}
 }
 
-// BrokenDeps
+// BrokenDeps initiated analysis on the broken dependencies
 func (p *Params) BrokenDeps() {
 	if p.Has("--broken-deps") {
 		dirDependencies := p.GetPosition(p.GetIndexOf("--broken-deps") + 1)
@@ -300,7 +300,7 @@ func (p *Params) BrokenDeps() {
 	}
 }
 
-// Diff
+// Diff, make "diff" between two folders recursively
 func (p *Params) Diff() {
 	if p.Has("--diff") {
 		positionDiff := p.GetIndexOf("--diff") + 1
@@ -354,11 +354,11 @@ func (p *Params) Diff() {
 	}
 }
 
-// Check é o pararâmetro para analisar dependências de um determinado alvo, no caso
-// algum diretório que é especificado pelo usuário, acessado recursivamente
-// cada arquivo/diretório e resgatado as entradas de "require" e "include" que
-// caracterizam uma dependência do programa.
-// a opção --dep-map faz uma analise profunda de todos os arquivos que usam essas dependências
+// Check is the stop parameter for analyzing dependencies of a given target, in the
+// case some directory that is specified by the user, accessed recursively
+// each "file/directory" and rescued the "require" and "include" entries that
+// characterize a program dependency.
+// the --dep-map option performs a thorough analysis of all files that use these dependencies
 func (p *Params) Check() {
 	if p.Has("--check") {
 		positionDiff := p.GetIndexOf("--check") + 1
@@ -386,9 +386,8 @@ func (p *Params) Check() {
 
 		p.FilterFileCheck(pathFQDN, p.Path)
 
-		// quando o parâmetro --dep-map é utilizado que será responsável por
-		// executar o preview dos resultados finais será a última função a ser executada
-		// Deep()
+		// when the --dep-map parameter is used that will be responsible for executing
+		// the preview of the final results will be the last function to be executed
 		if !p.Has("--dep-map") {
 			p.ResultDisplay()
 		}
@@ -396,9 +395,9 @@ func (p *Params) Check() {
 	}
 }
 
-// Deep inicializa uma analise profunda das dependências
-// em todos os arquivos do alvo identificando onde as dependências estão sendo
-// usadas em demais rotinas do sistema ou arquivos.
+// MapDeps, initializes a deep analysis of the dependencies
+// in all target files identifying where the dependencies are being
+// used in other system routines or files.
 func (p *Params) MapDeps(path, pathFQDN string) {
 	if p.Has("--dep-map") {
 		br := generateSpaces(" ")
@@ -410,7 +409,7 @@ func (p *Params) MapDeps(path, pathFQDN string) {
 	}
 }
 
-// FilterFile
+// FilterFile is used by the --diff parameter
 func (p *Params) FilterFile(directory, dirComFirst, dirComSecond string) {
 	if p.Has("--filter-file") {
 		filter := p.GetPosition(p.GetIndexOf("--filter-file") + 1)
@@ -427,8 +426,8 @@ func (p *Params) FilterFile(directory, dirComFirst, dirComSecond string) {
 	}
 }
 
-// Export() gera o diretório onde será exportado
-// os arquivos de log quando usado esse parâmetro --export
+// Export() generates the directory where it will be exported
+// the log files when you use this parameter --export
 func (p *Params) Export(name string) {
 	if p.Has("--export") {
 		pwd, err := os.Getwd()
@@ -502,21 +501,20 @@ func (p *Params) IsFolderExists(d string) bool {
 	return true
 }
 
-// InitiateDeepReport faz a leitura dos arquivos que foram gerados por ReadFileDependencieCheck()
-// armazenados os arquivos que são dependências no slice dependencyLogger no momento da execução,
-// cada arquivo desse é checado em todos os arquivos do sistema alvo para identificar se ele está sendo
-// usado em algum trecho do sistema, ignorando somente os arquivos que já estão na lista de filtros
-// passada como parâmetro --filter-file e os que estão na lista de exclusão que é passada para o parâmetro
-// --excluded-file, devido muitos dos arquivos que são dependências as vezes não serem importantes para a
-// pesquisa, ou são arquivos de conexão, sessão ou semelhantes.
+// InitiateDeepReport reads the files that were generated by "ReadFileDependencieCheck ()"
+// stored files that are dependencies in the slice "dependencyLogger" at runtime,
+// each file of this is checked in all files of the target system to identify if it is being
+// used in some part of the system, ignoring only the files that are already in the filter list
+// passed as the --filter-file parameter and the ones that are in the exclusion list that is
+// passed to the parameter --excluded-file, because many of the files that are dependencies are
+// sometimes not important for the search, or are connection, session, or similar files.
 func (p *Params) InitiateDeepReport(path, pathFQDN string) {
-	// dependencyLogger possui todos os arquivos encontrados como dependências
-	// dentro de cada arquivo analisado a partir da lista passada como parâmetro
+	// "dependencyLogger" has all files found as dependencies
+	// within each file parsed from the list passed as parameter
 	// ckp --check directory --filter-file ecidademarica/pessoal.out
 	for i := range dependencyLogger {
-		// inArray retorna "true" quando o arquivo estiver na lista passada,
-		// p.ExcludedFiles é um slice que contém a lista passada pelo usuário
-		// com os arquivos que devem ser ignorados.
+		// "inArray" returns true when the file is in the past list, "p.ExcludedFiles"
+		// is a slice that contains the list passed by the user with the files that should be ignored.
 		exists, _ := inArray(dependencyLogger[i], p.ExcludedFiles)
 		if !exists {
 			if p.Has("--verbose") {
@@ -529,7 +527,7 @@ func (p *Params) InitiateDeepReport(path, pathFQDN string) {
 	p.ResultDisplay()
 }
 
-// FilterFileCheck
+// FilterFileCheck is used by the --check parameter
 func (p *Params) FilterFileCheck(directory, dirComFirst string) {
 	if p.Has("--filter-file") {
 		filter := p.GetPosition(p.GetIndexOf("--filter-file") + 1)
@@ -543,7 +541,8 @@ func (p *Params) FilterFileCheck(directory, dirComFirst string) {
 	}
 }
 
-// ReadListFilesCheck
+// ReadListFilesCheck it reads file by file from the list that was passed via parameter
+// and checks the dependencies of the file being used, similar to the --broken-deps parameter
 func (p *Params) ReadListFilesCheck(directory, dirComFirst string) {
 	filterFile := p.GetPosition(p.GetIndexOf("--filter-file") + 1)
 	file, err := os.Open(filterFile)
@@ -562,7 +561,8 @@ func (p *Params) ReadListFilesCheck(directory, dirComFirst string) {
 	}
 }
 
-// ReadFileDependencieCheck
+// ReadFileDependencieCheck retrieves the dependency of the files that are in the list passed via parameter
+// and registered to the second step that will analyze the map of dependencies.
 func (p *Params) ReadFileDependencieCheck(file, directory, dirComFirst, anterior string, signal bool) {
 	pathFile := p.Path + "/" + file
 	if signal {
@@ -589,7 +589,7 @@ func (p *Params) ReadFileDependencieCheck(file, directory, dirComFirst, anterior
 			// @todo improvement for "use" namespaces
 			for scanner.Scan() {
 				text := scanner.Text()
-				indexRequire := strings.Index(text, "require") // require or require_once
+				indexRequire := strings.Index(text, "require")
 				if indexRequire != -1 {
 					split := strings.Split(text, "\"")
 					if len(split) == 3 {
@@ -605,7 +605,7 @@ func (p *Params) ReadFileDependencieCheck(file, directory, dirComFirst, anterior
 					}
 				}
 
-				indexInclude := strings.Index(text, "include") // include or include_once
+				indexInclude := strings.Index(text, "include")
 				if indexInclude != -1 {
 					split := strings.Split(text, "\"")
 					if len(split) == 3 {
@@ -626,7 +626,8 @@ func (p *Params) ReadFileDependencieCheck(file, directory, dirComFirst, anterior
 	return
 }
 
-// ReadListFiles
+// ReadListFiles it reads the files passed by the list and passes the files to
+// "OpenTwoFiles" and then to CompareBetweenTwoFiles to diffuse the files.
 func (p *Params) ReadListFiles(directory, dirComFirst, dirComSecond string) {
 	filterFile := p.GetPosition(p.GetIndexOf("--filter-file") + 1)
 	file, err := os.Open(filterFile)
@@ -645,7 +646,8 @@ func (p *Params) ReadListFiles(directory, dirComFirst, dirComSecond string) {
 	}
 }
 
-// WriteLog
+// WriteLog receives a list of file names and writes to a file that is also passed to the
+// function, the file is created and written information.
 func (p *Params) WriteLog(fileToWrite string, data []string) error {
 	openFile, err := os.OpenFile(fileToWrite, os.O_CREATE|os.O_RDWR, 0755)
 	if err != nil {
@@ -673,7 +675,7 @@ func (p *Params) WriteLog(fileToWrite string, data []string) error {
 	return err
 }
 
-// ReadDir
+// ReadDir makes a recursive read of a directory used by the --broken-deps parameter
 func (p *Params) ReadDir(directory string, signal bool, extension string) {
 	dirs, err := ioutil.ReadDir(directory)
 	if err != nil {
@@ -698,7 +700,10 @@ func (p *Params) ReadDir(directory string, signal bool, extension string) {
 	return
 }
 
-// readRecursiveDir
+// readRecursiveDir makes a recursive read of a directory, used by the parameters --diff and
+// --dep-map, the parameter --diff passes to the function "OpenTwoFiles" -> CompareBetweenTwoFiles
+// to make the difference of the files, the parameter --dep-map it reads file by file and returns
+// all data in a slice and passes it to the "SearchOnScanned" function to search the data.
 func (p *Params) ReadRecursiveDir(directory, dirComFirst, dirComSecond string) {
 	dirs, err := ioutil.ReadDir(directory)
 	if err != nil {
@@ -721,16 +726,16 @@ func (p *Params) ReadRecursiveDir(directory, dirComFirst, dirComSecond string) {
 			p.CompareBetweenTwoFiles(p.OpenTwoFiles(fileOrDirName, dirComFirst, dirComSecond))
 		}
 		if p.Has("--dep-map") {
-			// Nenhum arquivo de dependência pode estar na lista de filtro
-			// porque qualquer arquivo de dependência já veio provido dessa lista de filtros.
+			// No dependency file can be in the filter list, because any dependency file has
+			// already been provided with this filter list.
 			exists, _ := inArray(file.Name(), p.FilterFiles)
 			if !exists {
-				// Faz uma leitura em cada arquivo de cada pasta
+				// Performs each file in each folder
 				scanned := p.ScanFile(fileOrDirName)
-				// Faz uma busca do arquivo procurado no texto retornado por scanFile()
+				// Searches for the searched file in the text returned by "scanFile ()"
 				exist := p.SearchOnScanned(scanned, dirComSecond)
 				if exist {
-					// quando encontrado registra a ocorrência no slice dependencyMapLogger
+					// When found records the occurrence in the slice "dependencyMapLogger"
 					registerDependencyMap(fileOrDirName)
 				}
 			}
@@ -738,7 +743,18 @@ func (p *Params) ReadRecursiveDir(directory, dirComFirst, dirComSecond string) {
 	}
 }
 
-// SearchOnScanned
+// CompareBetweenTwoFiles compare two files when the option --export is passed to program
+func (p *Params) CompareBetweenTwoFiles(b1, b2 []byte, file, fileToCompare string) {
+	result := bytes.Compare(b1, b2)
+	if result != 0 && file != "" {
+		registerDiffer(file)
+		if params.Has("--export") {
+			params.GenerateDiffFiles(fileToCompare, file)
+		}
+	}
+}
+
+// SearchOnScanned search for a particular text in a data slice.
 func (p *Params) SearchOnScanned(data []string, search string) bool {
 	for i := range data {
 		indexRequire := strings.Index(data[i], search)
@@ -749,7 +765,8 @@ func (p *Params) SearchOnScanned(data []string, search string) bool {
 	return false
 }
 
-// ScanFile
+// ScanFile it reads into a file and returns all the data
+// which are in the file in a slice.
 func (p *Params) ScanFile(file string) []string {
 	nFile, err := os.Open(file)
 	if err != nil {
@@ -767,7 +784,7 @@ func (p *Params) ScanFile(file string) []string {
 	return tx
 }
 
-// OpenTwoFiles
+// OpenTwoFiles opens two files and returns the bytes of both
 func (p *Params) OpenTwoFiles(file, dirComFirst, dirComSecond string) ([]byte, []byte, string, string) {
 	// Register file for doesn't scan again
 	checkScann := registerFile(file)
@@ -821,18 +838,7 @@ func (p *Params) GenerateDiffFiles(b1, b2 string) {
 	w.Flush()
 }
 
-// CompareBetweenTwoFiles compare two files when the option --export is passed to program
-func (p *Params) CompareBetweenTwoFiles(b1, b2 []byte, file, fileToCompare string) {
-	result := bytes.Compare(b1, b2)
-	if result != 0 && file != "" {
-		registerDiffer(file)
-		if params.Has("--export") {
-			params.GenerateDiffFiles(fileToCompare, file)
-		}
-	}
-}
-
-// GenerateLog
+// GenerateLog function used to generate the logs of the --broken-deps parameter
 func (p *Params) GenerateLog(dependencia, fileorigem string) {
 	// Check if file exists
 	_, err := os.Stat("dependency_logs.txt")
@@ -869,6 +875,7 @@ func (p *Params) GenerateLog(dependencia, fileorigem string) {
 	brokenDependencyLogger = p.RegisterLog(text, brokenDependencyLogger)
 }
 
+// ReadFileDependencie function used by the --broken-deps parameter to identify broken dependencies
 func (p *Params) ReadFileDependencie(file, anterior string, signal bool) {
 	pathFile := p.Path + "/" + file
 
@@ -925,7 +932,7 @@ func (p *Params) ReadFileDependencie(file, anterior string, signal bool) {
 	return
 }
 
-// RegisterLog
+// RegisterLog records the affected files when searching for broken
 func (p *Params) RegisterLog(text string, brokenDependencyLogger []string) []string {
 	// check if logger exists
 	exists, _ := inArray(text, brokenDependencyLogger)
