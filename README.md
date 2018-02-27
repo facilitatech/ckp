@@ -5,7 +5,7 @@
 
 It analyzes dependencies of php programs, verifies files with require and include accessing 
 the file to verify its existence recursively, not checking files that use namespaces 
-like `use Zend\Stdlib\ Hydrator;`, it makes directory diffs recursively with export 
+like `use Zend\Stdlib\Hydrator;`, it makes directory diffs recursively with export 
 possibility of the result, performs file list dependency analysis, and creates a dependency map.
 
 ### Install
