@@ -348,9 +348,15 @@ func (p *Params) Diff() {
 		firstPathFQDN := pwd + "/" + firstPath
 
 		p.Export(nameDirDiffs)
-		p.CheckFilterFile()
+		filterFile := p.CheckFilterFile()
+		scanned := p.ScanFile(filterFile)
 
-		p.ReadListFiles(firstPathFQDN, firstPath, secondPath)
+		// it reads the files passed by the list and passes the files to
+		// "OpenTwoFiles" and then to CompareBetweenTwoFiles to diffuse the files.
+		for i := range scanned {
+			p.CompareBetweenTwoFiles(p.OpenTwoFiles(firstPathFQDN+"/"+scanned[i], firstPath, secondPath))
+		}
+
 		p.ReadRecursiveDir(firstPathFQDN, firstPath, secondPath)
 		p.ResultDisplay()
 	}
@@ -386,8 +392,14 @@ func (p *Params) Check() {
 		}
 		pathFQDN := pwd + "/" + p.Path
 
-		p.CheckFilterFile()
-		p.ReadListFilesCheck(pathFQDN, p.Path)
+		filterFile := p.CheckFilterFile()
+		scanned := p.ScanFile(filterFile)
+
+		// it reads file by file from the list that was passed via parameter
+		// and checks the dependencies of the file being used, similar to the --broken-deps parameter
+		for i := range scanned {
+			p.ReadFileDependencieCheck(scanned[i], pathFQDN, p.Path, "", false)
+		}
 
 		// when the --dep-map parameter is used that will be responsible for executing
 		// the preview of the final results will be the last function to be executed
@@ -413,7 +425,7 @@ func (p *Params) MapDeps(path, pathFQDN string) {
 }
 
 // CheckFilterFile is used for check param --filter-file
-func (p *Params) CheckFilterFile() {
+func (p *Params) CheckFilterFile() string {
 	if p.Has("--filter-file") {
 		filter := p.GetPosition(p.GetIndexOf("--filter-file") + 1)
 		if filter == "" {
@@ -422,7 +434,9 @@ func (p *Params) CheckFilterFile() {
 			puts("    Help: ckp --help")
 			os.Exit(2)
 		}
+		return filter
 	}
+	return ""
 }
 
 // Export generates the directory where it will be exported
@@ -540,26 +554,6 @@ func (p *Params) FilterFileCheck(directory, dirComFirst string) {
 	}
 }
 
-// ReadListFilesCheck it reads file by file from the list that was passed via parameter
-// and checks the dependencies of the file being used, similar to the --broken-deps parameter
-func (p *Params) ReadListFilesCheck(directory, dirComFirst string) {
-	filterFile := p.GetPosition(p.GetIndexOf("--filter-file") + 1)
-	file, err := os.Open(filterFile)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	fs := bufio.NewScanner(file)
-	for fs.Scan() {
-		p.ReadFileDependencieCheck(fs.Text(), directory, dirComFirst, "", false)
-	}
-
-	if err := fs.Err(); err != nil {
-		panic(err)
-	}
-}
-
 // ReadFileDependencieCheck retrieves the dependency of the files that are in the list passed via parameter
 // and registered to the second step that will analyze the map of dependencies.
 func (p *Params) ReadFileDependencieCheck(file, directory, dirComFirst, anterior string, signal bool) {
@@ -623,26 +617,6 @@ func (p *Params) ReadFileDependencieCheck(file, directory, dirComFirst, anterior
 		}
 	}
 	return
-}
-
-// ReadListFiles it reads the files passed by the list and passes the files to
-// "OpenTwoFiles" and then to CompareBetweenTwoFiles to diffuse the files.
-func (p *Params) ReadListFiles(directory, dirComFirst, dirComSecond string) {
-	filterFile := p.GetPosition(p.GetIndexOf("--filter-file") + 1)
-	file, err := os.Open(filterFile)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	fs := bufio.NewScanner(file)
-	for fs.Scan() {
-		p.CompareBetweenTwoFiles(p.OpenTwoFiles(directory+"/"+fs.Text(), dirComFirst, dirComSecond))
-	}
-
-	if err := fs.Err(); err != nil {
-		panic(err)
-	}
 }
 
 // WriteLog receives a list of file names and writes to a file that is also passed to the
