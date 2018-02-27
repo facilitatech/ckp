@@ -540,20 +540,6 @@ func (p *Params) InitiateDeepReport(path, pathFQDN string) {
 	p.ResultDisplay()
 }
 
-// FilterFileCheck is used by the --check parameter
-func (p *Params) FilterFileCheck(directory, dirComFirst string) {
-	if p.Has("--filter-file") {
-		filter := p.GetPosition(p.GetIndexOf("--filter-file") + 1)
-		if filter == "" {
-			puts("Not found parameters from --filter-file!")
-			puts("Usage:")
-			puts("    Help: ckp --help")
-			os.Exit(2)
-		}
-
-	}
-}
-
 // ReadFileDependencieCheck retrieves the dependency of the files that are in the list passed via parameter
 // and registered to the second step that will analyze the map of dependencies.
 func (p *Params) ReadFileDependencieCheck(file, directory, dirComFirst, anterior string, signal bool) {
