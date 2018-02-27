@@ -348,7 +348,9 @@ func (p *Params) Diff() {
 		firstPathFQDN := pwd + "/" + firstPath
 
 		p.Export(nameDirDiffs)
-		p.FilterFile(firstPathFQDN, firstPath, secondPath)
+		p.CheckFilterFile()
+
+		p.ReadListFiles(firstPathFQDN, firstPath, secondPath)
 		p.ReadRecursiveDir(firstPathFQDN, firstPath, secondPath)
 		p.ResultDisplay()
 	}
@@ -384,7 +386,8 @@ func (p *Params) Check() {
 		}
 		pathFQDN := pwd + "/" + p.Path
 
-		p.FilterFileCheck(pathFQDN, p.Path)
+		p.CheckFilterFile()
+		p.ReadListFilesCheck(pathFQDN, p.Path)
 
 		// when the --dep-map parameter is used that will be responsible for executing
 		// the preview of the final results will be the last function to be executed
@@ -409,8 +412,8 @@ func (p *Params) MapDeps(path, pathFQDN string) {
 	}
 }
 
-// FilterFile is used by the --diff parameter
-func (p *Params) FilterFile(directory, dirComFirst, dirComSecond string) {
+// CheckFilterFile is used for check param --filter-file
+func (p *Params) CheckFilterFile() {
 	if p.Has("--filter-file") {
 		filter := p.GetPosition(p.GetIndexOf("--filter-file") + 1)
 		if filter == "" {
@@ -419,10 +422,6 @@ func (p *Params) FilterFile(directory, dirComFirst, dirComSecond string) {
 			puts("    Help: ckp --help")
 			os.Exit(2)
 		}
-		p.ReadListFiles(directory, dirComFirst, dirComSecond)
-
-		p.ResultDisplay()
-		os.Exit(2)
 	}
 }
 
@@ -537,7 +536,7 @@ func (p *Params) FilterFileCheck(directory, dirComFirst string) {
 			puts("    Help: ckp --help")
 			os.Exit(2)
 		}
-		p.ReadListFilesCheck(directory, dirComFirst)
+
 	}
 }
 
