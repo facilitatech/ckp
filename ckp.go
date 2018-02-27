@@ -398,7 +398,7 @@ func (p *Params) Check() {
 		// it reads file by file from the list that was passed via parameter
 		// and checks the dependencies of the file being used, similar to the --broken-deps parameter
 		for i := range scanned {
-			p.ReadFileDependencieCheck(scanned[i], pathFQDN, p.Path, "", false)
+			p.ReadFileDependencie(scanned[i], "", false)
 		}
 
 		// when the --dep-map parameter is used that will be responsible for executing
@@ -467,7 +467,7 @@ func (p *Params) ResultDisplay() {
 		brokenDependencies := generateSpaces("Broken dependencies: " + strconv.Itoa(len(brokenDependencyLogger)))
 		empty.Println(resultPrint(brokenDependencies))
 
-		filesOpened1 := generateSpaces("Files opened: " + strconv.Itoa(len(files)))
+		filesOpened1 := generateSpaces("Files opened: " + strconv.Itoa(len(filesDep)))
 		empty.Println(resultPrint(filesOpened1))
 	}
 
@@ -540,16 +540,18 @@ func (p *Params) InitiateDeepReport(path, pathFQDN string) {
 	p.ResultDisplay()
 }
 
-// ReadFileDependencieCheck retrieves the dependency of the files that are in the list passed via parameter
+// ReadFileDependencie retrieves the dependency of the files that are in the list passed via parameter
 // and registered to the second step that will analyze the map of dependencies.
-func (p *Params) ReadFileDependencieCheck(file, directory, dirComFirst, anterior string, signal bool) {
+func (p *Params) ReadFileDependencie(file, anterior string, signal bool) {
 	pathFile := p.Path + "/" + file
 	if signal {
 		pathFile = file
 	}
 
 	nFile, err := os.Open(pathFile)
-	if err == nil {
+	if err != nil {
+		p.GenerateLog(pathFile, anterior)
+	} else {
 		if len(filesDep) == 0 {
 			filesDep = append(filesDep, pathFile)
 		}
@@ -572,30 +574,33 @@ func (p *Params) ReadFileDependencieCheck(file, directory, dirComFirst, anterior
 				if indexRequire != -1 {
 					split := strings.Split(text, "\"")
 					if len(split) == 3 {
-						registerDeep(split[1])
+						if p.Has("--dep-map") {
+							registerDeep(split[1])
+						}
 						newtext = generateSpaces(" [ require ] found: " + split[1] + " in file -> " + pathFile)
 
 						if p.Has("--verbose") {
 							found.Println(foundPrint(newtext))
 						}
 						if strings.Contains(split[1], ".php") {
-							p.ReadFileDependencieCheck(split[1], pathFile, directory, dirComFirst, false)
+							p.ReadFileDependencie(split[1], pathFile, false)
 						}
 					}
 				}
-
 				indexInclude := strings.Index(text, "include")
 				if indexInclude != -1 {
 					split := strings.Split(text, "\"")
 					if len(split) == 3 {
-						registerDeep(split[1])
+						if p.Has("--dep-map") {
+							registerDeep(split[1])
+						}
 						newtext = generateSpaces(" [ include ] found: " + split[1] + " in file -> " + pathFile)
 
 						if p.Has("--verbose") {
 							found.Println(foundPrint(newtext))
 						}
 						if strings.Contains(split[1], ".php") {
-							p.ReadFileDependencieCheck(split[1], pathFile, directory, dirComFirst, false)
+							p.ReadFileDependencie(split[1], pathFile, false)
 						}
 					}
 				}
@@ -832,63 +837,6 @@ func (p *Params) GenerateLog(dependencia, fileorigem string) {
 		brokenDependencyLogger = append(brokenDependencyLogger, text)
 	}
 	brokenDependencyLogger = p.RegisterLog(text, brokenDependencyLogger)
-}
-
-// ReadFileDependencie function used by the --broken-deps parameter to identify broken dependencies
-func (p *Params) ReadFileDependencie(file, anterior string, signal bool) {
-	pathFile := p.Path + "/" + file
-
-	if signal {
-		pathFile = file
-	}
-
-	nFile, err := os.Open(pathFile)
-	if err != nil {
-		p.GenerateLog(pathFile, anterior)
-	} else {
-		if len(files) == 0 {
-			files = append(files, pathFile)
-		}
-		checkScann := registerFile(pathFile)
-		if !checkScann {
-			//return
-			newtext := generateSpaces(" " + pathFile)
-			scanning.Println(scanningPrint(newtext))
-
-			scanner := bufio.NewScanner(nFile)
-			scanner.Split(bufio.ScanLines)
-
-			// Only scan for "require*" or "include*" entries
-			// @todo improvement for "use" namespaces
-			for scanner.Scan() {
-				text := scanner.Text()
-				indexRequire := strings.Index(text, "require") // require or require_once
-				if indexRequire != -1 {
-					split := strings.Split(text, "\"")
-					if len(split) == 3 {
-						newtext = generateSpaces(" [ require ] found: " + split[1] + " in file -> " + pathFile)
-						found.Println(foundPrint(newtext))
-						if strings.Contains(split[1], ".php") {
-							// only files *.php
-							p.ReadFileDependencie(split[1], pathFile, false)
-						}
-					}
-				}
-				indexInclude := strings.Index(text, "include") // include or include_once
-				if indexInclude != -1 {
-					split := strings.Split(text, "\"")
-					if len(split) == 3 {
-						newtext = generateSpaces(" [ include ] found: " + split[1] + " in file -> " + pathFile)
-						found.Println(foundPrint(newtext))
-						if strings.Contains(split[1], ".php") {
-							p.ReadFileDependencie(split[1], pathFile, false)
-						}
-					}
-				}
-			}
-		}
-	}
-	return
 }
 
 // RegisterLog records the affected files when searching for broken
