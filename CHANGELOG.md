@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v0.0.10
+
+_Release: 2018-02-27_
+
+- Refactoring ReadFileDependencie() function
+- Removed FilterFileCheck(), is not used more
+- Removed ReadListFiles() and ReadListFilesCheck()
+- Refactoring FilterFile() to CheckFilterFile()
+
+
 ## v0.0.9
 
 _Release: 2018-02-25_
@@ -11,6 +21,7 @@ _Release: 2018-02-25_
 - Changed build.sh to work with binary to linux.
 - Change name of main.go to ckp.go.
 - Included new feature --filter-file
+
 
 ## v0.0.8
 
